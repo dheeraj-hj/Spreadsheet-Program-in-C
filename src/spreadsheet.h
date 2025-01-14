@@ -10,7 +10,7 @@ typedef struct{
 
 // Spreadsheet Structure
 typedef struct{
-    cell **sheet; // 2D array of cells
+    cell **table; // 2D array of cells
     int rows; // Number of rows in the spreadsheet
     int cols; // Number of columns in the spreadsheet
 }spreadsheet;
