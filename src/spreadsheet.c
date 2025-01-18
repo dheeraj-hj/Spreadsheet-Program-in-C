@@ -4,7 +4,7 @@
 #include "stddef.h"
 #include "string.h"
 
-spreadsheet *create_spreadsheet(int rows, int cols){
+spreadsheet *create_spreadsheet(int rows, int cols, spreadsheetbounds *bounds){
     spreadsheet *s = (spreadsheet *)malloc(sizeof(spreadsheet));
     s->rows = rows;
     s->cols = cols;
@@ -16,6 +16,18 @@ spreadsheet *create_spreadsheet(int rows, int cols){
             s->table[i][j].dependency = 0;
         }
     }
+    if (bounds==NULL) {
+        bounds=(spreadsheetbounds *)malloc(sizeof(spreadsheetbounds));
+    }
+
+    bounds->first_row=(int *)malloc(sizeof(int));
+    bounds->first_col=(int *)malloc(sizeof(int));
+    bounds->last_row=(int *)malloc(sizeof(int));
+    bounds->last_col=(int *)malloc(sizeof(int));
+    *(bounds->first_row)=1;
+    *(bounds->first_col)=1;  
+    *(bounds->last_row)=rows;    
+    *(bounds->last_col)=cols;
     return s;
 }
 

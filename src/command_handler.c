@@ -87,16 +87,17 @@ void validate_command(spreadsheet* sheet, const char *command , char *targetcell
 
 }
 
-void handle_control_command(char control,spreadsheet *sheet, int *firstrow, int *firstcol, int *lastrow, int *lastcol){
+void handle_control_command(char control,spreadsheet *sheet, spreadsheetbounds *bounds){
     int num_rows=sheet->rows;
     int num_cols=sheet->cols;
+    int firstrow=*(bounds->first_row),firstcol=*(bounds->first_col),lastrow=*(bounds->last_row),lastcol=*(bounds->last_col);    
     switch(control){
         case 'w':
-            lastrow=(firstrow-10>=0)?lastrow-10:lastrow-firstrow;
+            lastrow=(firstrow-10>0)?lastrow-10:lastrow-firstrow;
             firstrow=max(0,firstrow-10);
             break;
         case 'a':
-            lastcol=(firstcol-10>=0)?lastcol-10:lastcol-firstcol;
+            lastcol=(firstcol-10>0)?lastcol-10:lastcol-firstcol;
             firstcol=max(0,firstcol-10);
             break;
         case 's':
