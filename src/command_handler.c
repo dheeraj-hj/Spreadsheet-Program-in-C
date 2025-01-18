@@ -12,7 +12,10 @@ void parse_command(spreadsheet* sheet, const char *command){
     char expression[MAX_EXPRESSION];
     int error_code = 0;
     validate_command(sheet ,command , targetcell , expression , &error_code);
-    printf("%d\n" , error_code);
+    if(error_code != 0){
+        error_message(error_code);
+        return;
+    }
 }
 
 void validate_command(spreadsheet* sheet, const char *command , char *targetcell , char *expression , int *error_code){
@@ -42,6 +45,42 @@ void validate_command(spreadsheet* sheet, const char *command , char *targetcell
         }
         *error_code = 3; // Invalid Expression
         return;
+    }
+    if(expr_type != -1){
+        switch (expr_type){
+            case 0: 
+                number_assign(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 1:
+                value_assign(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 2:
+                operator_assign(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 3:
+                min_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 4:
+                max_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 5:
+                avg_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 6:
+                sum_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 7:
+                stdev_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 8:
+                sleep_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 9:
+                sleep_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            default:
+                break;
+        }
     }
 
 }
