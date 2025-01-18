@@ -3,6 +3,8 @@
 #include "spreadsheet.h"
 #include "stdio.h"
 #include "string.h"
+#include "algorithm"
+#include "stdlib.h"
 
 #define MAX_CELL_NAME 100
 #define MAX_EXPRESSION 1000
@@ -83,4 +85,32 @@ void validate_command(spreadsheet* sheet, const char *command , char *targetcell
         }
     }
 
+}
+
+void handle_control_command(char control,spreadsheet *sheet, int *firstrow, int *firstcol, int *lastrow, int *lastcol){
+    int num_rows=sheet->rows;
+    int num_cols=sheet->cols;
+    switch(control){
+        case 'w':
+            lastrow=(firstrow-10>=0)?lastrow-10:lastrow-firstrow;
+            firstrow=max(0,firstrow-10);
+            break;
+        case 'a':
+            lastcol=(firstcol-10>=0)?lastcol-10:lastcol-firstcol;
+            firstcol=max(0,firstcol-10);
+            break;
+        case 's':
+            firstrow=(lastrow+10<=num_rows)?firstrow+10:firstrow+num_rows-lastrow;
+            lastrow=min(num_rows,lastrow+10);
+            break;
+        case 'd':
+            firstcol=(lastcol+10<=num_cols)?firstcol+10:firstcol+num_cols-lastcol;
+            lastcol=min(num_cols,lastcol+10);
+            break;
+        case 'q':
+            printf("Quitting the program\n");
+            exit(0);
+        default:
+            printf("Invalid command! Use w/a/s/d to scroll or q to quit.\n");
+    }
 }
