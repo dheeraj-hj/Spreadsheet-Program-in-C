@@ -8,107 +8,82 @@
 #define MAX_CELL_NAME 100
 #define MAX_EXPRESSION 1000
 
-// void parse_command(spreadsheet* sheet, const char *command){
-//     char targetcell[MAX_CELL_NAME];
-//     char expression[MAX_EXPRESSION];
-//     int error_code = 0;
-//     validate_command(sheet ,command , targetcell , expression , &error_code);
-//     if(error_code != 0){
-//         error_message(error_code);
-//         return;
-//     }
-// }
+void parse_command(spreadsheet* sheet, const char *command){
+    char targetcell[MAX_CELL_NAME];
+    char expression[MAX_EXPRESSION];
+    int error_code = 0;
+    validate_command(sheet ,command , targetcell , expression , &error_code);
+    if(error_code != 0){
+        error_message(error_code);
+        return;
+    }
+}
 
-// void validate_command(spreadsheet* sheet, const char *command , char *targetcell , char *expression , int *error_code){
+void validate_command(spreadsheet* sheet, const char *command , char *targetcell , char *expression , int *error_code){
 
-//     char *equal = strchr(command , '=');
-//     if(equal == NULL){
-//         *error_code = 1; // Invalid command
-//         return;
-//     }
-//     strncpy(targetcell , command , equal - command);
-//     targetcell[equal - command] = '\0';
-//     strcpy(expression , equal + 1);
-//     // trim_space(targetcell);
-//     // trim_space(expression);
-//     int targetcell_rowid;
-//     int targetcell_colid;
-//     if(!valid_cell(sheet , targetcell , &targetcell_rowid , &targetcell_colid)){ // valid cell can also be used to extract row and column indices
-//         *error_code = 2; // Invalid Cell reference
-//         return;
-//     }
-//     int _err = 0;
-//     int expr_type = -1;
-//     if(!valid_expression(sheet , expression , &expr_type , &_err)){
-//         if(_err == 1){
-//             *error_code = 4; // Invalid Range
-//             return;
-//         }
-//         *error_code = 3; // Invalid Expression
-//         return;
-//     }
-//     if(expr_type != -1){
-//         switch (expr_type){
-//             case 0: 
-//                 number_assign(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             case 1:
-//                 value_assign(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             case 2:
-//                 operator_assign(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             case 3:
-//                 min_handling(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             case 4:
-//                 max_handling(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             case 5:
-//                 avg_handling(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             case 6:
-//                 sum_handling(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             case 7:
-//                 stdev_handling(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             case 8:
-//                 sleep_handling(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             case 9:
-//                 sleep_handling(targetcell_rowid , targetcell_colid , expression);
-//                 break;
-//             default:
-//                 break;
-//         }
-//     }
-
-// }
-
-spreadsheet *create_spreadsheet(int rows, int cols){
-    spreadsheet *s = (spreadsheet *)malloc(sizeof(spreadsheet));
-    s->rows = rows;
-    s->cols = cols;
-    s->table = (cell **)malloc(rows * sizeof(cell *));
-    s->bounds=(spreadsheetbounds *)malloc(sizeof(spreadsheetbounds));
-    for(int i = 0; i < rows; i++){
-        s->table[i] = (cell *)malloc(cols * sizeof(cell));
-        for(int j = 0; j < cols; j++){
-            s->table[i][j].val = NULL;
-            s->table[i][j].dependency = 0;
+    char *equal = strchr(command , '=');
+    if(equal == NULL){
+        *error_code = 1; // Invalid command
+        return;
+    }
+    strncpy(targetcell , command , equal - command);
+    targetcell[equal - command] = '\0';
+    strcpy(expression , equal + 1);
+    // trim_space(targetcell);
+    // trim_space(expression);
+    int targetcell_rowid;
+    int targetcell_colid;
+    if(!valid_cell(sheet , targetcell , &targetcell_rowid , &targetcell_colid)){ // valid cell can also be used to extract row and column indices
+        *error_code = 2; // Invalid Cell reference
+        return;
+    }
+    int _err = 0;
+    int expr_type = -1;
+    if(!valid_expression(sheet , expression , &expr_type , &_err)){
+        if(_err == 1){
+            *error_code = 4; // Invalid Range
+            return;
+        }
+        *error_code = 3; // Invalid Expression
+        return;
+    }
+    if(expr_type != -1){
+        switch (expr_type){
+            case 0: 
+                number_assign(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 1:
+                value_assign(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 2:
+                operator_assign(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 3:
+                min_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 4:
+                max_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 5:
+                avg_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 6:
+                sum_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 7:
+                stdev_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 8:
+                sleep_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            case 9:
+                sleep_handling(targetcell_rowid , targetcell_colid , expression);
+                break;
+            default:
+                break;
         }
     }
 
-    s->bounds->first_row=(int *)malloc(sizeof(int));
-    s->bounds->first_col=(int *)malloc(sizeof(int));
-    s->bounds->last_row=(int *)malloc(sizeof(int));
-    s->bounds->last_col=(int *)malloc(sizeof(int));
-    *(s->bounds->first_row)=1;
-    *(s->bounds->first_col)=1;
-    *(s->bounds->last_row)=(rows<10)?rows:10;
-    *(s->bounds->last_col)=(cols<10)?cols:10;
-    return s;
 }
 
 void handle_control_command(char control,spreadsheet *sheet){
