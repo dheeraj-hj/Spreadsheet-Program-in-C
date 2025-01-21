@@ -3,6 +3,33 @@
 #include "ctype.h"
 #include "string.h"
 
+//int main(){
+//	printf("%s",colIndex_to_name(0));
+//	printf("\n");
+//	printf("%s",colIndex_to_name(25));
+//	printf("\n");
+//	printf("%s",colIndex_to_name(26));
+//	printf("\n");
+//	printf("%s",colIndex_to_name(18277));
+//	return 0;
+//}
+
+char* colIndex_to_name(int i){
+	// function assumses that i lies between 0 and 18,277
+	static char col_name[3];
+    int index = 0;
+
+    while (i >=0) {
+        col_name[index++] = (i % 26) + 'A'; 
+        i = (i/26)-1; 
+        if (i< 0) break;
+    }
+
+    col_name[index] ='\0'; 
+    return col_name;	
+
+}
+
 int is_number(const char *val) {
     for (int i = 0; val[i] != '\0'; i++) {
         if (!(val[i] >= '0' && val[i] <= '9')) {

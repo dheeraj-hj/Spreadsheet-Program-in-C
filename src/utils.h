@@ -5,6 +5,7 @@
 
 #include "spreadsheet.h"
 
+char* colIndex_to_name(const int i);
 void name_to_indices(const char *name, int *row, int *col); // Convert the cell name to row and column indices
 void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *col2); // Convert the range to row and column indices
 char* trim_space(char *str); // Trim the leading and trailing spaces from a string
