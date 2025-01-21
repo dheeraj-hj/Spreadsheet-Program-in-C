@@ -4,11 +4,12 @@
 #include "stddef.h"
 #include "string.h"
 
-spreadsheet *create_spreadsheet(int rows, int cols, spreadsheetbounds *bounds){
+spreadsheet *create_spreadsheet(int rows, int cols){
     spreadsheet *s = (spreadsheet *)malloc(sizeof(spreadsheet));
     s->rows = rows;
     s->cols = cols;
     s->table = (cell **)malloc(rows * sizeof(cell *));
+    s->bounds=(spreadsheetbounds *)malloc(sizeof(spreadsheetbounds));
     for(int i = 0; i < rows; i++){
         s->table[i] = (cell *)malloc(cols * sizeof(cell));
         for(int j = 0; j < cols; j++){
@@ -16,18 +17,15 @@ spreadsheet *create_spreadsheet(int rows, int cols, spreadsheetbounds *bounds){
             s->table[i][j].dependency = 0;
         }
     }
-    if (bounds==NULL) {
-        bounds=(spreadsheetbounds *)malloc(sizeof(spreadsheetbounds));
-    }
 
-    bounds->first_row=(int *)malloc(sizeof(int));
-    bounds->first_col=(int *)malloc(sizeof(int));
-    bounds->last_row=(int *)malloc(sizeof(int));
-    bounds->last_col=(int *)malloc(sizeof(int));
-    *(bounds->first_row)=1;
-    *(bounds->first_col)=1;  
-    *(bounds->last_row)=rows;    
-    *(bounds->last_col)=cols;
+    s->bounds->first_row=(int *)malloc(sizeof(int));
+    s->bounds->first_col=(int *)malloc(sizeof(int));
+    s->bounds->last_row=(int *)malloc(sizeof(int));
+    s->bounds->last_col=(int *)malloc(sizeof(int));
+    *(s->bounds->first_row)=1;
+    *(s->bounds->first_col)=1;
+    *(s->bounds->last_row)=(rows<10)?rows:10;
+    *(s->bounds->last_col)=(cols<10)?cols:10;
     return s;
 }
 
@@ -43,3 +41,4 @@ void set_cell(spreadsheet *sheet, int row, int col, char *val){
         sheet->table[row][col].dependency = 1;
     }
 }
+
