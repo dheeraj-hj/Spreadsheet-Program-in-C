@@ -16,6 +16,6 @@ void avg_handling(int *row , int *col, char *expr);
 void sum_handling(int *row , int *col, char *expr);
 void stdev_handling(int *row , int *col, char *expr);
 void sleep_handling(int *row , int *col, char *expr);
-void handle_control_command(char control, spreadsheet *sheet, ); 
+void handle_control_command(char control, spreadsheet *sheet ); 
 
 #endif

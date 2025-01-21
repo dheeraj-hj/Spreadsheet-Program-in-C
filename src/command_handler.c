@@ -3,7 +3,6 @@
 #include "spreadsheet.h"
 #include "stdio.h"
 #include "string.h"
-#include "algorithm"
 #include "stdlib.h"
 
 #define MAX_CELL_NAME 100
