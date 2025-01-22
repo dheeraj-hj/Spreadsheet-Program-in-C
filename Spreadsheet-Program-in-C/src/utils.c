@@ -3,6 +3,56 @@
 #include "ctype.h"
 #include "string.h"
 
+void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *col2){
+    char start_cell[10] ={0} ;
+    char end_cell[10] ={0};
+    int i =0,j  = 0 ;
+
+    while (isalpha(range[i])  || isdigit(range[i])) {
+        start_cell[j++] =  range[i++]  ;
+    }
+    start_cell[j] ='\0';
+
+    if (range[i] == ':') {
+        i++ ;
+    } else {
+        *row1 = *col1  = *row2 = *col2 =-1 ;
+        return ;
+    }
+
+    j= 0 ;
+    while (isalpha(range[i]) || isdigit(range[i])) {
+        end_cell[j++] = range[i++];
+    }
+    end_cell[j] ='\0' ;
+
+    name_to_indices(start_cell, row1, col1);
+    name_to_indices(end_cell, row2, col2) ;
+
+        // just checking if index are positive or not.
+        if (*row1 <0 || *col1 <0 || *row2< 0 || *col2 < 0) {
+            // Handle invalid indices
+            *row1 = *col1 = *row2 = *col2 =-1 ;
+        }
+    return ;
+}
+
+void name_to_indices(const char *name, int *row, int *col){
+    *col=0;
+    *row=0;
+    int i= 0;
+    while (isalpha(name[i])) {
+        *col= *col * 26 +(name[i] -'A' +1)  ;
+        i++ ;
+    }
+    
+    while(isdigit(name[i])) {
+        *row=  *row*10 + (name[i]- '0');
+        i++ ;
+    }
+    *row-=1;
+    *col-=1;
+}
 
 char* colIndex_to_name(int i){
     // function assumses that i lies between 0 and 18,277
@@ -16,6 +66,13 @@ char* colIndex_to_name(int i){
     }
 
     col_name[index] ='\0';
+    
+    for (int j = 0, k = index - 1; j < k; j++, k--) {
+            char temp = col_name[j];
+            col_name[j] = col_name[k];
+            col_name[k] = temp;
+        }
+    
     return col_name;
 
 }
