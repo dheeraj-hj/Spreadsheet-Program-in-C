@@ -12,8 +12,9 @@ spreadsheet *create_spreadsheet(int rows, int cols, spreadsheetbounds *bounds){
     for(int i = 0; i < rows; i++){
         s->table[i] = (cell *)malloc(cols * sizeof(cell));
         for(int j = 0; j < cols; j++){
-            s->table[i][j].val = NULL;
-            s->table[i][j].dependency = 0;
+            s->table[i][j].formula = NULL;
+            s->table[i][j].dependency = "0";
+            s->table[i][j].val = 0;
         }
     }
     if (bounds==NULL) {
@@ -30,7 +31,7 @@ spreadsheet *create_spreadsheet(int rows, int cols, spreadsheetbounds *bounds){
     *(bounds->last_col)=cols;
     return s;
 }
-
+    
 void set_cell(spreadsheet *sheet, int row, int col, char *val){
     if(sheet->table[row][col].val != NULL){
         free(sheet->table[row][col].val);

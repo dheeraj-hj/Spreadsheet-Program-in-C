@@ -4,8 +4,9 @@
 
 // Single Cell Structure in the Spreadsheet
 typedef struct{
-    char *val; // Value or dependent formula of the cell
-    int dependency; // 0 or 1, 1 if the cell has a dependent formula
+    int val;
+    char *formula; // Value or dependent formula of the cell
+    char dependency[1]; // 0 or 1, 1 if the cell has a dependent formula
 }cell;
 
 

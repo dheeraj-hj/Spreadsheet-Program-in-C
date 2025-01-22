@@ -2,11 +2,12 @@
 #include "utils.h"
 #include "spreadsheet.h"
 #include "stdio.h"
+#include "stdlib.h"
 #include "string.h"
 #include "stdlib.h"
 
-#define MAX_CELL_NAME 100
-#define MAX_EXPRESSION 1000
+#define MAX_CELL_NAME 7 // ZZZ999
+#define MAX_EXPRESSION 21 // SLEEP(AAA111:ZZZ999)
 
 void parse_command(spreadsheet* sheet, const char *command){
     char targetcell[MAX_CELL_NAME];
@@ -20,6 +21,14 @@ void parse_command(spreadsheet* sheet, const char *command){
 }
 
 void validate_command(spreadsheet* sheet, const char *command , char *targetcell , char *expression , int *error_code){
+    /*
+        Validates the given commands and assigns work for respective command handling functions
+        ERROR Meaning :
+        1 : INVALID command / Command not recognized
+        2 : INVALID reference to Cell
+        3 : INVALID expression
+        4 : INVALID range
+    */
 
     char *equal = strchr(command , '=');
     if(equal == NULL){
@@ -50,34 +59,34 @@ void validate_command(spreadsheet* sheet, const char *command , char *targetcell
     if(expr_type != -1){
         switch (expr_type){
             case 0: 
-                number_assign(targetcell_rowid , targetcell_colid , expression);
+                number_assign(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             case 1:
-                value_assign(targetcell_rowid , targetcell_colid , expression);
+                value_assign(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             case 2:
-                operator_assign(targetcell_rowid , targetcell_colid , expression);
+                operator_assign(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             case 3:
-                min_handling(targetcell_rowid , targetcell_colid , expression);
+                min_handling(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             case 4:
-                max_handling(targetcell_rowid , targetcell_colid , expression);
+                max_handling(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             case 5:
-                avg_handling(targetcell_rowid , targetcell_colid , expression);
+                avg_handling(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             case 6:
-                sum_handling(targetcell_rowid , targetcell_colid , expression);
+                sum_handling(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             case 7:
-                stdev_handling(targetcell_rowid , targetcell_colid , expression);
+                stdev_handling(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             case 8:
-                sleep_handling(targetcell_rowid , targetcell_colid , expression);
+                sleep_handling(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             case 9:
-                sleep_handling(targetcell_rowid , targetcell_colid , expression);
+                sleep_handling(sheet , targetcell_rowid , targetcell_colid , expression);
                 break;
             default:
                 break;
@@ -85,6 +94,15 @@ void validate_command(spreadsheet* sheet, const char *command , char *targetcell
     }
 
 }
+
+
+void number_assign(spreadsheet* sheet, int *row , int *col, char *expr){
+    sheet->table[row][col].val = atoi(expr);
+    sheet->table[row][col].dependency = "0";
+    sheet->table[row][col].expr = NULL;
+}
+
+
 
 void handle_control_command(char control,spreadsheet *sheet, spreadsheetbounds *bounds){
     int num_rows=sheet->rows;
