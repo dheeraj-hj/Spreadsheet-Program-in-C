@@ -7,9 +7,9 @@
 #include "string.h"
 
 int main(){
-    int rows=5;
-    int cols=5;
+    int rows=15;
+    int cols=53;
     spreadsheetbounds *bounds=(spreadsheetbounds *)malloc(sizeof(spreadsheetbounds));
     spreadsheet *sheet = create_spreadsheet(rows, cols, bounds);
-    printf("%d\n", bounds->first_row);
+    display_sheet(sheet);
 }

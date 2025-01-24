@@ -6,17 +6,8 @@
 typedef struct{
     int val;
     char *formula; // Value or dependent formula of the cell
-    char dependency[1]; // 0 or 1, 1 if the cell has a dependent formula
+    char dependency; // 0 or 1, 1 if the cell has a dependent formula
 }cell;
-
-
-// Spreadsheet Structure
-typedef struct{
-    cell **table; // 2D array of cells
-    int rows; // Number of rows in the spreadsheet
-    int cols; // Number of columns in the spreadsheet
-    // spreadsheetbounds *bounds; // Bounds of the spreadsheet
-}spreadsheet;
 
 // Spreadsheet Bounds Structure
 typedef struct {
@@ -26,7 +17,16 @@ typedef struct {
     int *last_col; // Last column of the spreadsheet
 }spreadsheetbounds;
 
-spreadsheet *create_spreadsheet(int rows, int cols, spreadsheetbounds *bounds); // Create a new spreadsheet
+// Spreadsheet Structure
+typedef struct{
+    cell **table; // 2D array of cells
+    int rows; // Number of rows in the spreadsheet
+    int cols; // Number of columns in the spreadsheet
+    spreadsheetbounds *bounds; // Bounds of the spreadsheet
+}spreadsheet;
+
+
+spreadsheet *create_spreadsheet(int rows, int cols); // Create a new spreadsheet
 void free_spreadsheet(spreadsheet *sheet); // Free the memory allocated for the spreadsheet
 void set_cell(spreadsheet *sheet, int row, int col, char *val); // Set the value of a cell
 int evaluate_cell(spreadsheet *sheet, int row, int col); // Evaluate the value of a cell

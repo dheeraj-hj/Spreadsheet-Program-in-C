@@ -6,18 +6,20 @@
 #include "string.h"
 #include "stdlib.h"
 
-#define MAX_CELL_NAME 7 // ZZZ999
+#define MAX_CELL_NAME 7 // ZZZ999 // have to make it dynamic size
 #define MAX_EXPRESSION 21 // SLEEP(AAA111:ZZZ999)
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 void parse_command(spreadsheet* sheet, const char *command){
     char targetcell[MAX_CELL_NAME];
     char expression[MAX_EXPRESSION];
     int error_code = 0;
     validate_command(sheet ,command , targetcell , expression , &error_code);
-    if(error_code != 0){
-        error_message(error_code);
-        return;
-    }
+    // if(error_code != 0){
+    //     error_message(error_code);
+    //     return;
+    // }
 }
 
 void validate_command(spreadsheet* sheet, const char *command , char *targetcell , char *expression , int *error_code){
@@ -56,74 +58,82 @@ void validate_command(spreadsheet* sheet, const char *command , char *targetcell
         *error_code = 3; // Invalid Expression
         return;
     }
-    if(expr_type != -1){
-        switch (expr_type){
-            case 0: 
-                number_assign(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            case 1:
-                value_assign(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            case 2:
-                operator_assign(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            case 3:
-                min_handling(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            case 4:
-                max_handling(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            case 5:
-                avg_handling(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            case 6:
-                sum_handling(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            case 7:
-                stdev_handling(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            case 8:
-                sleep_handling(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            case 9:
-                sleep_handling(sheet , targetcell_rowid , targetcell_colid , expression);
-                break;
-            default:
-                break;
-        }
-    }
+    printf("Expression Type : %d\n", expr_type);
+    // if(expr_type != -1){
+    //     switch (expr_type){
+    //         case 0: 
+    //             number_assign(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         case 1:
+    //             value_assign(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         case 2:
+    //             operator_assign(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         case 3:
+    //             min_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         case 4:
+    //             max_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         case 5:
+    //             avg_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         case 6:
+    //             sum_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         case 7:
+    //             stdev_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         case 8:
+    //             sleep_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         case 9:
+    //             sleep_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    // }
 
 }
 
 
-void number_assign(spreadsheet* sheet, int *row , int *col, char *expr){
-    sheet->table[row][col].val = atoi(expr);
-    sheet->table[row][col].dependency = "0";
-    sheet->table[row][col].expr = NULL;
-}
+// void number_assign(spreadsheet* sheet, int *row , int *col, char *expr){
+//     sheet->table[row][col].val = atoi(expr);
+//     sheet->table[row][col].dependency = '0';
+//     sheet->table[row][col].expr = NULL;
+// }
+
+// void value_assign(spreadsheet* sheet, int *row , int *col, char *expr){
+
+//     sheet->table[row][col].val = evaluate_cell(sheet , row , col);
+//     sheet->table[row][col].dependency = '1';
+//     sheet->table[row][col].expr = expr;
+// }
 
 
-
-void handle_control_command(char control,spreadsheet *sheet, spreadsheetbounds *bounds){
+void handle_control_command(char control,spreadsheet *sheet){
     int num_rows=sheet->rows;
     int num_cols=sheet->cols;
-    int firstrow=*(bounds->first_row),firstcol=*(bounds->first_col),lastrow=*(bounds->last_row),lastcol=*(bounds->last_col);    
+    int *firstrow=sheet->bounds->first_row,*firstcol=sheet->bounds->first_col;
+    int *lastrow=sheet->bounds->last_row,*lastcol=sheet->bounds->last_col;    
     switch(control){
         case 'w':
-            lastrow=(firstrow-10>0)?lastrow-10:lastrow-firstrow;
-            firstrow=max(0,firstrow-10);
+            *lastrow=(*firstrow-10>0)?*lastrow-10:*lastrow-*firstrow+1;
+            *firstrow=MAX(1,*firstrow-10);
             break;
         case 'a':
-            lastcol=(firstcol-10>0)?lastcol-10:lastcol-firstcol;
-            firstcol=max(0,firstcol-10);
+            *lastcol=(*firstcol-10>0)?*lastcol-10:*lastcol-*firstcol+1;
+            *firstcol=MAX(1,*firstcol-10);
             break;
         case 's':
-            firstrow=(lastrow+10<=num_rows)?firstrow+10:firstrow+num_rows-lastrow;
-            lastrow=min(num_rows,lastrow+10);
+            *firstrow=(*lastrow+10<=num_rows)?*firstrow+10:*firstrow+num_rows-*lastrow;
+            *lastrow=MIN(num_rows,*lastrow+10);
             break;
         case 'd':
-            firstcol=(lastcol+10<=num_cols)?firstcol+10:firstcol+num_cols-lastcol;
-            lastcol=min(num_cols,lastcol+10);
+            *firstcol=(*lastcol+10<=num_cols)?*firstcol+10:*firstcol+num_cols-*lastcol;
+            *lastcol=MIN(num_cols,*lastcol+10);
             break;
         case 'q':
             printf("Quitting the program\n");
