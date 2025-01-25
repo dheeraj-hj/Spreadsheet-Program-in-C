@@ -9,7 +9,7 @@ void validate_command(); // Validate the command
 void error_message(int error_code); // Print error message
 void number_assign(spreadsheet* sheet, int *row , int *col, char *expr);
 void value_assign(spreadsheet* sheet, int *row , int *col, char *expr);
-void operator_assign(int *row , int *col, char *expr);
+void operator_assign(spreadsheet* sheet, int *row , int *col, char *expr);
 void min_handling(int *row , int *col, char *expr);
 void max_handling(int *row , int *col, char *expr);
 void avg_handling(int *row , int *col, char *expr);
