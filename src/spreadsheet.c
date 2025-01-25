@@ -20,9 +20,12 @@ spreadsheet *create_spreadsheet(int rows, int cols){
             s->table[i][j].val = 0;
             s->table[i][j].dependency = '0';
             s->table[i][j].formula = NULL;
+            s->table[i][j].parents = NULL;
+            s->table[i][j].children = NULL;
+            s->table[i][j].num_parents = 0;
+            s->table[i][j].num_children = 0;
         }
     }
-
     s->bounds->first_row=(int *)malloc(sizeof(int));
     s->bounds->first_col=(int *)malloc(sizeof(int));
     s->bounds->last_row=(int *)malloc(sizeof(int));

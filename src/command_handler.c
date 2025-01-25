@@ -58,7 +58,7 @@ void validate_command(spreadsheet* sheet, const char *command , char *targetcell
         *error_code = 3; // Invalid Expression
         return;
     }
-    printf("Expression Type : %d\n", expr_type);
+    // printf("Expression Type : %d\n", expr_type);
     // if(expr_type != -1){
     //     switch (expr_type){
     //         case 0: 
@@ -99,17 +99,80 @@ void validate_command(spreadsheet* sheet, const char *command , char *targetcell
 }
 
 
-// void number_assign(spreadsheet* sheet, int *row , int *col, char *expr){
-//     sheet->table[row][col].val = atoi(expr);
+void number_assign(spreadsheet* sheet, int *row , int *col, char *expr){
+    sheet->table[*row][*col].val = atoi(expr);
+    sheet->table[*row][*col].dependency = '0';
+    sheet->table[*row][*col].formula = NULL;
+}
+
+void value_assign(spreadsheet* sheet, int *row , int *col, char *expr){
+    int dependent_row;
+    int dependent_col;
+    valid_cell(sheet , expr , &dependent_row , &dependent_col);
+    if(*row == dependent_row && *col == dependent_col){
+        // error_message(6); // Self reference
+        return;
+    }
+    int dependent_cell_hash = hash_index(sheet , dependent_row , dependent_col);
+    int current_cell_hash = hash_index(sheet , *(row) , *(col));
+    if(check_cycle(sheet , &sheet->table[*row][*col] , &dependent_cell_hash)){
+        // error_message(7); // Cycle Formation
+        return;
+    }
+    add_child(&sheet->table[dependent_row][dependent_col] , current_cell_hash);
+    add_parent(&sheet->table[*row][*col] , dependent_cell_hash);
+    sheet->table[*row][*col].val = sheet->table[dependent_row][dependent_col].val;
+    sheet->table[*row][*col].dependency = '1';
+    sheet->table[*row][*col].formula = expr;
+}
+
+// void operator_assign(spreadsheet* sheet, int *row , int *col, char *expr){
+//     char *operators = "+-*/";
+//     char *op = strpbrk(expr , operators);
+//     char operation = op[0];
+//     char *left = expr;
+//     char *right = op + 1;
+//     *op = '\0';
+//     int left_val;
+//     int right_val;
+//     if(is_number(left)){
+//         left_val = atoi(left);
+//     }else{
+//         int left_row;
+//         int left_col;
+//         valid_cell(sheet , left , &left_row , &left_col);
+//         left_val = sheet->table[left_row][left_col].val;
+//     }
+//     if(is_number(right)){
+//         right_val = atoi(right);
+//     }else{
+//         int right_row;
+//         int right_col;
+//         valid_cell(sheet , right , &right_row , &right_col);
+//         right_val = sheet->table[right_row][right_col].val;
+//     }
+//     switch (operation){
+//         case '+':
+//             sheet->table[row][col].val = left_val + right_val;
+//             break;
+//         case '-':
+//             sheet->table[row][col].val = left_val - right_val;
+//             break;
+//         case '*':
+//             sheet->table[row][col].val = left_val * right_val;
+//             break;
+//         case '/':
+//             // if(right_val == 0){
+//             //     error_message(5); // Division by zero
+//             //     return;
+//             // }
+//             sheet->table[row][col].val = left_val / right_val;
+//             break;
+//         default:
+//             break;
+//     }
 //     sheet->table[row][col].dependency = '0';
 //     sheet->table[row][col].expr = NULL;
-// }
-
-// void value_assign(spreadsheet* sheet, int *row , int *col, char *expr){
-
-//     sheet->table[row][col].val = evaluate_cell(sheet , row , col);
-//     sheet->table[row][col].dependency = '1';
-//     sheet->table[row][col].expr = expr;
 // }
 
 

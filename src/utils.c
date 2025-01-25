@@ -119,6 +119,8 @@ int valid_cell(spreadsheet* sheet , char *cell , int *row_id, int *col_id){
     if(*col_id > sheet->cols || *row_id > sheet->rows){
         return 0;
     }
+    *row_id = *row_id - 1;
+    *col_id = *col_id -1; 
     return 1;
 }
 
@@ -269,3 +271,32 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
 }
 
 
+void add_child(cell *c, int child_hash) {
+    c->num_children++;
+    c->children = (int *)realloc(c->children, c->num_children * sizeof(int));
+    c->children[c->num_children - 1] = child_hash;
+}
+void add_parent(cell *c, int parent_hash) {
+    c->num_parents++;
+    c->parents = (int *)realloc(c->parents, c->num_parents * sizeof(int));
+    c->parents[c->num_parents - 1] = parent_hash;
+}
+int hash_index(spreadsheet *sheet , int row, int col) {
+    return (row * sheet->cols) + col;
+}
+int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
+    if(c->num_children == 0){
+        return 0;
+    }
+    for(int i = 0; i < c->num_children; i++){
+        if(c->children[i] == *(target_cell_hash)){
+            return 1;
+        }
+        int colm = c->children[i] % sheet->cols;
+        int row = c->children[i] / sheet->cols;
+        if(check_cycle(sheet , &sheet->table[row][colm], target_cell_hash)){
+            return 1;
+        }
+    }
+    return 0;
+}

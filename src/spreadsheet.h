@@ -4,9 +4,13 @@
 
 // Single Cell Structure in the Spreadsheet
 typedef struct{
-    int val;
-    char *formula; // Value or dependent formula of the cell
-    char dependency; // 0 or 1, 1 if the cell has a dependent formula
+    int val;               // Value of the cell
+    char *formula;         // Formula or dependent value of the cell
+    int dependency;        // 0 if no dependency, 1 if dependent formula
+    int *parents;          // Array of parent cell hashes
+    int *children;         // Array of child cell hashes
+    int num_parents;       // Number of parent cells
+    int num_children;      // Number of child cells
 }cell;
 
 // Spreadsheet Bounds Structure

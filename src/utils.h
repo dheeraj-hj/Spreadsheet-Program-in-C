@@ -15,6 +15,9 @@ int calculate_min(spreadsheet* sheet, int row1, int col1, int row2, int col2);
 int calculate_sum(spreadsheet* sheet, int row1, int col1, int row2, int col2);
 int calculate_avg(spreadsheet* sheet, int row1, int col1, int row2, int col2);
 int calculate_stdev(spreadsheet* sheet, int row1, int col1, int row2, int col2);
-// Still more functions to be added
+void add_child(cell* c , int child_hash);
+void add_parent(cell* c , int parent_hash);
+int hash_index(spreadsheet *sheet , int row, int col);
+int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash);
 
 #endif
