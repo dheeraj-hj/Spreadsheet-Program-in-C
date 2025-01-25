@@ -10,6 +10,11 @@ int is_number(const char *val); // Check if a string is a number
 int valid_cell(spreadsheet* sheet , char *cell , int *row_id , int *col_id);
 int valid_range(spreadsheet *sheet , char *range , int *error_code);
 int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int *error_code);
+int calculate_max(spreadsheet* sheet, int row1, int col1, int row2, int col2);
+int calculate_min(spreadsheet* sheet, int row1, int col1, int row2, int col2);
+int calculate_sum(spreadsheet* sheet, int row1, int col1, int row2, int col2);
+int calculate_avg(spreadsheet* sheet, int row1, int col1, int row2, int col2);
+int calculate_stdev(spreadsheet* sheet, int row1, int col1, int row2, int col2);
 // Still more functions to be added
 
 #endif
