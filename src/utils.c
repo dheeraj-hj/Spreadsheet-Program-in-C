@@ -2,31 +2,82 @@
 #include "stdlib.h"
 #include "ctype.h"
 #include "string.h"
+#include "limits.h"
 
-//int main(){
-//	printf("%s",colIndex_to_name(0));
-//	printf("\n");
-//	printf("%s",colIndex_to_name(25));
-//	printf("\n");
-//	printf("%s",colIndex_to_name(26));
-//	printf("\n");
-//	printf("%s",colIndex_to_name(18277));
-//	return 0;
-//}
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *col2){
+    char start_cell[10] ={0} ;
+    char end_cell[10] ={0};
+    int i =0,j  = 0 ;
+
+    while (isalpha(range[i])  || isdigit(range[i])) {
+        start_cell[j++] =  range[i++]  ;
+    }
+    start_cell[j] ='\0';
+
+    if (range[i] == ':') {
+        i++ ;
+    } else {
+        *row1 = *col1  = *row2 = *col2 =-1 ;
+        return ;
+    }
+
+    j= 0 ;
+    while (isalpha(range[i]) || isdigit(range[i])) {
+        end_cell[j++] = range[i++];
+    }
+    end_cell[j] ='\0' ;
+
+    name_to_indices(start_cell, row1, col1);
+    name_to_indices(end_cell, row2, col2) ;
+
+        // just checking if index are positive or not.
+        if (*row1 <0 || *col1 <0 || *row2< 0 || *col2 < 0) {
+            // Handle invalid indices
+            *row1 = *col1 = *row2 = *col2 =-1 ;
+        }
+    return ;
+}
+
+void name_to_indices(const char *name, int *row, int *col){
+    *col=0;
+    *row=0;
+    int i= 0;
+    while (isalpha(name[i])) {
+        *col= *col * 26 +(name[i] -'A' +1)  ;
+        i++ ;
+    }
+    
+    while(isdigit(name[i])) {
+        *row=  *row*10 + (name[i]- '0');
+        i++ ;
+    }
+    *row-=1;
+    *col-=1;
+}
 
 char* colIndex_to_name(int i){
-	// function assumses that i lies between 0 and 18,277
-	static char col_name[3];
+    // function assumses that i lies between 0 and 18,277
+    static char col_name[3];
     int index = 0;
 
     while (i >=0) {
-        col_name[index++] = (i % 26) + 'A'; 
-        i = (i/26)-1; 
+        col_name[index++] = (i % 26) + 'A';
+        i = (i/26)-1;
         if (i< 0) break;
     }
 
-    col_name[index] ='\0'; 
-    return col_name;	
+    col_name[index] ='\0';
+    
+    for (int j = 0, k = index - 1; j < k; j++, k--) {
+            char temp = col_name[j];
+            col_name[j] = col_name[k];
+            col_name[k] = temp;
+        }
+    
+    return col_name;
 
 }
 
@@ -72,6 +123,8 @@ int valid_cell(spreadsheet* sheet , char *cell , int *row_id, int *col_id){
     if(*col_id > sheet->cols || *row_id > sheet->rows){
         return 0;
     }
+    *row_id = *row_id - 1;
+    *col_id = *col_id -1; 
     return 1;
 }
 
@@ -221,4 +274,66 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
     return 0;
 }
 
+// Calculate the maximum value in the range
+int calculate_max(spreadsheet *sheet, int row1, int col1, int row2, int col2){ 
+    int max=INT_MIN; 
+    for(int i=row1; i<=row2; i++){
+        for(int j=col1; j<=col2; j++){
+            max=MAX(sheet->table[i][j].val,max);
+        }
+    }
+    return max;
+}
 
+// Calculate the minimum value in the range
+int calculate_min(spreadsheet *sheet, int row1, int col1, int row2, int col2){
+    int min=INT_MAX;
+    for(int i=row1; i<=row2; i++){
+        for(int j=col1; j<=col2; j++){
+            min=MIN(sheet->table[i][j].val,min);
+        }
+    }
+    return min;
+}
+
+// Calculate the average value in the range
+long calculate_avg(spreadsheet *sheet, int row1, int col1, int row2, int col2){
+    long sum=0;
+    long num_cells=(row2-row1+1)*(col2-col1+1);
+    for(int i=row1; i<=row2; i++){
+        for(int j=col1; j<=col2; j++){
+            sum+=sheet->table[i][j].val;
+        }
+    }
+    return sum/num_cells;
+}
+
+void add_child(cell *c, int child_hash) {
+    c->num_children++;
+    c->children = (int *)realloc(c->children, c->num_children * sizeof(int));
+    c->children[c->num_children - 1] = child_hash;
+}
+void add_parent(cell *c, int parent_hash) {
+    c->num_parents++;
+    c->parents = (int *)realloc(c->parents, c->num_parents * sizeof(int));
+    c->parents[c->num_parents - 1] = parent_hash;
+}
+int hash_index(spreadsheet *sheet , int row, int col) {
+    return (row * sheet->cols) + col;
+}
+int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
+    if(c->num_children == 0){
+        return 0;
+    }
+    for(int i = 0; i < c->num_children; i++){
+        if(c->children[i] == *(target_cell_hash)){
+            return 1;
+        }
+        int colm = c->children[i] % sheet->cols;
+        int row = c->children[i] / sheet->cols;
+        if(check_cycle(sheet , &sheet->table[row][colm], target_cell_hash)){
+            return 1;
+        }
+    }
+    return 0;
+}

@@ -1,10 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
-#define min(a,b) (a<b?a:b)
-#define max(a,b) (a>b?a:b)
 
 #include "spreadsheet.h"
-
 char* colIndex_to_name(const int i);
 void name_to_indices(const char *name, int *row, int *col); // Convert the cell name to row and column indices
 void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *col2); // Convert the range to row and column indices
@@ -13,6 +10,14 @@ int is_number(const char *val); // Check if a string is a number
 int valid_cell(spreadsheet* sheet , char *cell , int *row_id , int *col_id);
 int valid_range(spreadsheet *sheet , char *range , int *error_code);
 int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int *error_code);
-// Still more functions to be added
+int calculate_max(spreadsheet* sheet, int row1, int col1, int row2, int col2);
+int calculate_min(spreadsheet* sheet, int row1, int col1, int row2, int col2);
+int calculate_sum(spreadsheet* sheet, int row1, int col1, int row2, int col2);
+long calculate_avg(spreadsheet* sheet, int row1, int col1, int row2, int col2);
+int calculate_stdev(spreadsheet* sheet, int row1, int col1, int row2, int col2);
+void add_child(cell* c , int child_hash);
+void add_parent(cell* c , int parent_hash);
+int hash_index(spreadsheet *sheet , int row, int col);
+int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash);
 
 #endif

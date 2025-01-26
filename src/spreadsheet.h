@@ -4,8 +4,13 @@
 
 // Single Cell Structure in the Spreadsheet
 typedef struct{
-    char *val; // Value or dependent formula of the cell
-    int dependency; // 0 or 1, 1 if the cell has a dependent formula
+    int val;               // Value of the cell
+    char *formula;         // Formula or dependent value of the cell
+    int dependency;        // 0 if no dependency, 1 if dependent formula
+    int *parents;          // Array of parent cell hashes
+    int *children;         // Array of child cell hashes
+    int num_parents;       // Number of parent cells
+    int num_children;      // Number of child cells
 }cell;
 
 // Spreadsheet Bounds Structure
@@ -23,6 +28,7 @@ typedef struct{
     int cols; // Number of columns in the spreadsheet
     spreadsheetbounds *bounds; // Bounds of the spreadsheet
 }spreadsheet;
+
 
 spreadsheet *create_spreadsheet(int rows, int cols); // Create a new spreadsheet
 void free_spreadsheet(spreadsheet *sheet); // Free the memory allocated for the spreadsheet
