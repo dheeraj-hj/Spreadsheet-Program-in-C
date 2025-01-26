@@ -277,11 +277,29 @@ void add_child(cell *c, int child_hash) {
     c->children[c->num_children - 1] = child_hash;
 }
 void add_parent(cell *c, int parent_hash) {
+
+    if (c->parents == NULL) {
+        c->parents = malloc(sizeof(int));
+        if (c->parents == NULL) {
+            fprintf(stderr, "Memory allocation failed in add_parent\n");
+            return;
+        }
+        c->num_parents = 0;
+    }
+
+    // Allocate new space
+    int *new_parents = realloc(c->parents, (c->num_parents + 1) * sizeof(int));
+    if (new_parents == NULL) {
+        fprintf(stderr, "Memory allocation failed in add_parent\n");
+        return;
+    }
+
+    // Update pointer and add new parent
+    c->parents = new_parents;
+    c->parents[c->num_parents] = parent_hash;
     c->num_parents++;
-    c->parents = (int *)realloc(c->parents, c->num_parents * sizeof(int));
-    c->parents[c->num_parents - 1] = parent_hash;
 }
-int hash_index(spreadsheet *sheet , int row, int col) {
+int hash_index(spreadsheet *sheet , int row, int col)   {
     return (row * sheet->cols) + col;
 }
 int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
@@ -318,4 +336,5 @@ void delete_parent_connections(spreadsheet *sheet, cell *c){
     }
     free(c->parents);
     c->num_parents = 0;
+    c->parents = NULL;
 }

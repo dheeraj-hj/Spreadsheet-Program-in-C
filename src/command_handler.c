@@ -5,6 +5,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "stdlib.h"
+#include "limits.h"
 
 #define MAX_CELL_NAME 7 // ZZZ999 // have to make it dynamic size
 #define MAX_EXPRESSION 21 // SLEEP(AAA111:ZZZ999)
@@ -213,6 +214,63 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, char *expr){
     sheet->table[*row][*col].formula = exprdup;
 }
 
+void min_handling(spreadsheet* sheet , int *row , int *col ,char *expr){
+    // Duplicate expr to work on a modifiable copy
+    char *exprdup = strndup(expr, strlen(expr));
+
+    // Find function start and range end
+    char *fun_end = strchr(exprdup, '(');
+    char *range_end = strchr(exprdup, ')');
+    char *range = fun_end + 1;
+
+    // Null-terminate at specific locations
+    *fun_end = '\0';
+    *range_end = '\0';
+
+    // Find the colon separator
+    char *colon = strchr(range, ':');
+    *colon = '\0';
+    char *first_cell = range;
+    char *last_cell = colon + 1;
+
+    // Convert cell names to indices
+    int row1, col1, row2, col2;
+    name_to_indices(first_cell, &row1, &col1);
+    name_to_indices(last_cell, &row2, &col2);
+
+    // Validate cells and check for cycles or self-references
+    for (int i = row1; i <= row2; i++) {
+        for (int j = col1; j <= col2; j++) {
+            if (i == *row && j == *col) {
+               // error_message(6); // Self reference
+                return;
+            }
+
+            int dependent_cell_hash = hash_index(sheet, i, j);
+            if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
+                // error_message(7); // Cycle Formation
+                return;
+            }
+        }
+    }
+    delete_parent_connections(sheet, &sheet->table[*row][*col]);
+    // printf("parent size : %d \n" , sheet->table[*row][*col].num_parents);
+    int min_val = INT_MAX;
+    for (int i = row1; i <= row2; i++) {
+        for (int j = col1; j <= col2; j++) {
+            min_val = MIN(min_val, sheet->table[i][j].val);
+            add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
+            add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
+            // printf("index : %d , %d ,hash : %d\n" , i , j , hash_index(sheet , i , j));
+            // for(int i = 0 ;i < sheet->table[*row][*col].num_parents ; i++){
+            //     printf("parent : %d " , sheet->table[*row][*col].parents[i]);
+            // }
+            // printf("\n");
+        }
+    }
+    sheet->table[*row][*col].val = min_val;
+    sheet->table[*row][*col].formula = exprdup;
+}
 
 void handle_control_command(char control,spreadsheet *sheet){
     int num_rows=sheet->rows;
