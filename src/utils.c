@@ -142,6 +142,7 @@ int valid_range(spreadsheet *sheet , char *range , int *error_code){
     }
     return 0;
 }
+
 int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int *error_code){
 
 /*
@@ -270,12 +271,30 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
     return 0;
 }
 
-
 void add_child(cell *c, int child_hash) {
+    if(c->children == NULL){
+        c->children = malloc(sizeof(int));
+        if (c->children == NULL) {
+            fprintf(stderr, "Memory allocation failed in add_parent\n");
+            return;
+        }
+        c->num_children = 0;
+    }
+    for(int i = 0 ; i < c->num_children ; i++){
+        if(c->children[i] == child_hash){
+            return;
+        }
+    }
+    int *new_children = realloc(c->children, (c->num_children + 1) * sizeof(int));
+    if (new_children == NULL) {
+        fprintf(stderr, "Memory allocation failed in add_parent\n");
+        return;
+    }
+    c->children = new_children;
+    c->children[c->num_children] = child_hash;
     c->num_children++;
-    c->children = (int *)realloc(c->children, c->num_children * sizeof(int));
-    c->children[c->num_children - 1] = child_hash;
 }
+
 void add_parent(cell *c, int parent_hash) {
 
     if (c->parents == NULL) {
@@ -299,9 +318,11 @@ void add_parent(cell *c, int parent_hash) {
     c->parents[c->num_parents] = parent_hash;
     c->num_parents++;
 }
+
 int hash_index(spreadsheet *sheet , int row, int col)   {
     return (row * sheet->cols) + col;
 }
+
 int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
     if(c->num_children == 0){
         return 0;
@@ -318,6 +339,7 @@ int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
     }
     return 0;
 }
+
 void delete_parent_connections(spreadsheet *sheet, cell *c){
     for(int i = 0; i < c->num_parents; i++){
         int colm = c->parents[i] % sheet->cols;
