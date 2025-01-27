@@ -14,7 +14,7 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *expr);
 void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr);
 void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr);
 void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr);
-void stdev_handling(int *row , int *col, char *expr);
+void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr);
 void sleep_handling(int *row , int *col, char *expr);
 void handle_control_command(char control,spreadsheet *sheet); 
 

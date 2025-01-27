@@ -6,6 +6,7 @@
 #include "string.h"
 #include "stdlib.h"
 #include "limits.h"
+#include "math.h" // Use -lm while compiling
 
 #define MAX_CELL_NAME 7 // ZZZ999 // have to make it dynamic size
 #define MAX_EXPRESSION 21 // SLEEP(AAA111:ZZZ999)
@@ -407,8 +408,8 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr){
         }
     }
     delete_parent_connections(sheet, &sheet->table[*row][*col]);
-    int sum = 0;
-    int cnt = 0;
+    float sum = 0;
+    float cnt = 0;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             sum = sum + sheet->table[i][j].val;
@@ -417,10 +418,68 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr){
             add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
         }
     }
-    sheet->table[*row][*col].val = sum/cnt;
+    float favg = sum/cnt;
+    int avg = round(favg);
+    sheet->table[*row][*col].val = avg;
     sheet->table[*row][*col].formula = exprdup;
     free(exprdup);
 }
+
+void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr){
+    char *exprdup = strndup(_expr, strlen(_expr));
+    char *fun_end = strchr(exprdup, '(');
+    char *range_end = strchr(exprdup, ')');
+    char *range = fun_end + 1;
+    *fun_end = '\0';
+    *range_end = '\0';
+    char *colon = strchr(range, ':');
+    *colon = '\0';
+    char *first_cell = range;
+    char *last_cell = colon + 1;
+    int row1, col1, row2, col2;
+    name_to_indices(first_cell, &row1, &col1);
+    name_to_indices(last_cell, &row2, &col2);
+    for (int i = row1; i <= row2; i++) {
+        for (int j = col1; j <= col2; j++) {
+            if (i == *row && j == *col) {
+                // error_message(6); // Self reference
+                free(exprdup);
+                return;
+            }
+            int dependent_cell_hash = hash_index(sheet, i, j);
+            if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
+                // error_message(7); // Cycle Formation
+                free(exprdup);
+                return;
+            }
+        }
+    }
+    delete_parent_connections(sheet, &sheet->table[*row][*col]);
+    float sum = 0;
+    float cnt = 0;
+    for (int i = row1; i <= row2; i++) {
+        for (int j = col1; j <= col2; j++) {
+            sum = sum + sheet->table[i][j].val;
+            cnt++;
+            add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
+            add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
+        }
+    }
+    float mean = sum/cnt;
+    float values = 0.0;
+    for (int i = row1; i <= row2; i++) {
+        for (int j = col1; j <= col2; j++) {
+            values += pow(sheet->table[i][j].val - mean , 2);
+        }
+    }
+    float stddev = sqrt(values/cnt);
+    int sd = round(stddev);
+    sheet->table[*row][*col].val = sd;
+    sheet->table[*row][*col].formula = exprdup;
+    free(exprdup);
+
+}
+
 void handle_control_command(char control,spreadsheet *sheet){
     int num_rows=sheet->rows;
     int num_cols=sheet->cols;
