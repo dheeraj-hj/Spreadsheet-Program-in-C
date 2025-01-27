@@ -5,7 +5,7 @@
 // Single Cell Structure in the Spreadsheet
 typedef struct{
     int val;               // Value of the cell
-    char *formula;         // Formula or dependent value of the cell
+    const char *formula;         // Formula or dependent value of the cell
     int dependency;        // 0 if no dependency, 1 if dependent formula
     int *parents;          // Array of parent cell hashes
     int *children;         // Array of child cell hashes
@@ -32,7 +32,7 @@ typedef struct{
 
 spreadsheet *create_spreadsheet(int rows, int cols); // Create a new spreadsheet
 void free_spreadsheet(spreadsheet *sheet); // Free the memory allocated for the spreadsheet
-void set_cell(spreadsheet *sheet, int row, int col, char *val); // Set the value of a cell
+void set_cell(spreadsheet *sheet, int row, int col, const char *val); // Set the value of a cell
 int evaluate_cell(spreadsheet *sheet, int row, int col); // Evaluate the value of a cell
 
 #endif

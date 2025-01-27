@@ -5,12 +5,12 @@
 
 void parse_command(spreadsheet *sheet, const char *command); // Parse the command 
 void execute_command(); // Execute the command
-void validate_command(); // Validate the command
+void validate_command(spreadsheet* sheet, const char *command , char *targetcell , char *expression , int *error_code); // Validate the command
 void error_message(int error_code); // Print error message
-void number_assign(spreadsheet* sheet, int *row , int *col, char *expr);
-void value_assign(spreadsheet* sheet, int *row , int *col, char *expr);
-void operator_assign(spreadsheet* sheet, int *row , int *col, char *expr);
-void min_handling(spreadsheet* sheet , int *row , int *col ,char *expr);
+void number_assign(spreadsheet* sheet, int *row , int *col, const char *expr);
+void value_assign(spreadsheet* sheet, int *row , int *col, const char *expr);
+void operator_assign(spreadsheet* sheet, int *row , int *col,const char *expr);
+void min_handling(spreadsheet* sheet , int *row , int *col ,const char *expr);
 void max_handling(int *row , int *col, char *expr);
 void avg_handling(int *row , int *col, char *expr);
 void sum_handling(int *row , int *col, char *expr);

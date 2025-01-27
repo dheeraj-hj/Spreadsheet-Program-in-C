@@ -86,12 +86,16 @@ int is_number(const char *val) {
     return 1;
 }
 
-int valid_cell(spreadsheet* sheet , char *cell , int *row_id, int *col_id){
+int valid_cell(spreadsheet* sheet ,const char *_cell , int *row_id, int *col_id){
+    char* cell = strdup(_cell);
     int i = 0;
     while(cell[i] && isalpha(cell[i])){
         i++;
     }
-    if(i == 0) return 0;
+    if(i == 0){
+        free(cell);
+        return 0;
+    }
     char col[i + 1];
     strncpy(col , cell , i);
     col[i] = '\0';
@@ -100,6 +104,7 @@ int valid_cell(spreadsheet* sheet , char *cell , int *row_id, int *col_id){
     int j = 0;
     while(row_str[j]){
         if(!isdigit(row_str[j])){
+            free(cell);
             return 0;
         }
         j++;
@@ -110,6 +115,7 @@ int valid_cell(spreadsheet* sheet , char *cell , int *row_id, int *col_id){
     char *temp_col = col;
     while(*temp_col){
         if(*temp_col < 'A' || *temp_col > 'Z'){
+            free(cell);
             return 0;
         }
         *col_id = *col_id * 26 + (*temp_col - 'A' + 1);
@@ -117,14 +123,17 @@ int valid_cell(spreadsheet* sheet , char *cell , int *row_id, int *col_id){
     }
     
     if(*col_id > sheet->cols || *row_id > sheet->rows){
+        free(cell);
         return 0;
     }
     *row_id = *row_id - 1;
     *col_id = *col_id -1; 
+    free(cell);
     return 1;
 }
 
-int valid_range(spreadsheet *sheet , char *range , int *error_code){
+int valid_range(spreadsheet *sheet ,const char *_range , int *error_code){
+    char *range = strdup(_range);
     char *colon = strchr(range , ':');
     if(colon){
         *colon = '\0';
@@ -133,17 +142,20 @@ int valid_range(spreadsheet *sheet , char *range , int *error_code){
         int row_topleft , col_topleft , row_bottomright , col_bottomright;
         if(valid_cell(sheet , start , &row_topleft , &col_topleft) && valid_cell(sheet , end , &row_bottomright , &col_bottomright)){
             if(row_topleft <= row_bottomright && col_topleft <= col_bottomright){
+                free(range);
                 return 1;
             }else{
                 *error_code = 1;
+                free(range);
                 return 0;
             }
         }
     }
+    free(range);
     return 0;
 }
 
-int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int *error_code){
+int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_type , int *error_code){
 
 /*
     Function will return 0 if invalid expression and 1 if valid expression
@@ -159,15 +171,18 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
     8 - SLEEP(number)
     9 - SLEEP(cell)
 */
+    char *expression = strdup(_expression);
     int row_id;
     int col_id;
 
     if(is_number(expression)){
         *expr_type = 0;
+        free(expression);
         return 1;
     }
     else if(valid_cell(sheet , expression , &row_id , &col_id)){
         *expr_type = 1;
+        free(expression);
         return 1;
     }
     else if(strchr(expression, '+') || strchr(expression, '-') || strchr(expression, '*') || strchr(expression, '/')){
@@ -179,6 +194,7 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
             *op = '\0';
             if((is_number(left) || valid_cell(sheet , left ,  &row_id , &col_id)) && (is_number(right) || valid_cell(sheet , right, &row_id , &col_id))){
                 *expr_type = 2;
+                free(expression);
                 return 1;
             }
         }
@@ -192,6 +208,7 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
             *range_end = '\0';
             if(valid_range(sheet , range , error_code)){
                 *expr_type = 3;
+                free(expression);
                 return 1;
             }
         }
@@ -205,6 +222,7 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
             *range_end = '\0';
             if(valid_range(sheet , range , error_code)){
                 *expr_type = 4;
+                free(expression);
                 return 1;
             }
         }
@@ -218,6 +236,7 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
             *range_end = '\0';
             if(valid_range(sheet , range , error_code)){
                 *expr_type = 5;
+                free(expression);
                 return 1;
             }
         }
@@ -231,6 +250,7 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
             *range_end = '\0';
             if(valid_range(sheet , range , error_code)){
                 *expr_type = 6;
+                free(expression);
                 return 1;
             }
         }
@@ -244,6 +264,7 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
             *range_end = '\0';
             if(valid_range(sheet , range , error_code)){
                 *expr_type = 7;
+                free(expression);
                 return 1;
             }
         }
@@ -258,16 +279,19 @@ int valid_expression(spreadsheet* sheet, char *expression , int *expr_type , int
 
             if(is_number(time)){
                 *expr_type = 8;
+                free(expression);
                 return 1;
             }
             else if(valid_cell(sheet , time,  &row_id , &col_id)){
                 *expr_type = 9;
+                free(expression);
                 return 1;
             }
             
         }
 
     }
+    free(expression);
     return 0;
 }
 
