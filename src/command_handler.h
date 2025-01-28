@@ -17,5 +17,6 @@ void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr);
 void stdev_handling(spreadsheet* sheet,int *row , int *col, const char *expr);
 void sleep_handling(spreadsheet* sheet,int *row , int *col,const char *expr);
 void handle_control_command(char control,spreadsheet *sheet); 
+void scroll_to(spreadsheet *sheet, char *cell); // Scroll to the cell
 
 #endif

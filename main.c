@@ -1,10 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "src/spreadsheet.h"
-#include "src/command_handler.h"
 #include "src/spreadsheet_display.h"
+#include "src/command_handler.h"
 #include "src/utils.h"
-#include "stdlib.h"
-#include "stddef.h"
-#include "string.h"
 
 char ex[] = {"MIN(A1:A2)"};
 int main(){

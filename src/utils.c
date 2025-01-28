@@ -2,6 +2,10 @@
 #include "stdlib.h"
 #include "ctype.h"
 #include "string.h"
+#include "limits.h"
+#include "math.h"
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *col2){
     char start_cell[10] ={0} ;
@@ -347,6 +351,40 @@ int hash_index(spreadsheet *sheet , int row, int col)   {
     return (row * sheet->cols) + col;
 }
 
+// Calculate the maximum value in the range
+int calculate_max(spreadsheet *sheet, int row1, int col1, int row2, int col2){ 
+    int max=INT_MIN; 
+    for(int i=row1; i<=row2; i++){
+        for(int j=col1; j<=col2; j++){
+            max=MAX(sheet->table[i][j].val,max);
+        }
+    }
+    return max;
+}
+
+// Calculate the minimum value in the range
+int calculate_min(spreadsheet *sheet, int row1, int col1, int row2, int col2){
+    int min=INT_MAX;
+    for(int i=row1; i<=row2; i++){
+        for(int j=col1; j<=col2; j++){
+            min=MIN(sheet->table[i][j].val,min);
+        }
+    }
+    return min;
+}
+
+// Calculate the average value in the range
+int calculate_avg(spreadsheet *sheet, int row1, int col1, int row2, int col2){
+    float sum=0;
+    float num_cells=(row2-row1+1)*(col2-col1+1);
+    for(int i=row1; i<=row2; i++){
+        for(int j=col1; j<=col2; j++){
+            sum+=sheet->table[i][j].val;
+        }
+    }
+    float favg = sum/num_cells;
+    return round(favg);
+}
 int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
     if(c->num_children == 0){
         return 0;

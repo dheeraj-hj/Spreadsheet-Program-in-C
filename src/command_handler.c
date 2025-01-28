@@ -497,8 +497,12 @@ void handle_control_command(char control,spreadsheet *sheet){
         case 's':
             *firstrow=(*lastrow+10<=num_rows)?*firstrow+10:*firstrow+num_rows-*lastrow;
             *lastrow=MIN(num_rows,*lastrow+10);
+            *firstrow=(*lastrow+10<=num_rows)?*firstrow+10:*firstrow+num_rows-*lastrow;
+            *lastrow=MIN(num_rows,*lastrow+10);
             break;
         case 'd':
+            *firstcol=(*lastcol+10<=num_cols)?*firstcol+10:*firstcol+num_cols-*lastcol;
+            *lastcol=MIN(num_cols,*lastcol+10);
             *firstcol=(*lastcol+10<=num_cols)?*firstcol+10:*firstcol+num_cols-*lastcol;
             *lastcol=MIN(num_cols,*lastcol+10);
             break;
@@ -507,5 +511,36 @@ void handle_control_command(char control,spreadsheet *sheet){
             exit(0);
         default:
             printf("Invalid command! Use w/a/s/d to scroll or q to quit.\n");
+        
+        // Display function to be called after this
     }
+}
+
+void scroll_to(spreadsheet *sheet, char *cell){
+    // The check for output suppressed to be done before calling this function
+    int num_rows=sheet->rows;
+    int num_cols=sheet->cols;
+    int *firstrow=sheet->bounds->first_row,*firstcol=sheet->bounds->first_col;
+    int *lastrow=sheet->bounds->last_row,*lastcol=sheet->bounds->last_col;  
+
+    int row,col;
+    name_to_indices(cell,&row,&col); // Convert the cell name to row and column indices
+
+    row+=1,col+=1;
+    if(row>num_rows || col>num_cols){
+        printf("Invalid cell name\n");
+        return;
+    }
+
+    // This is the top left cell
+    *firstrow=row; 
+    *firstcol=col; 
+
+    // This is the bottom right cell
+    *lastrow=MIN(num_rows,*firstrow+9); 
+    *lastcol=MIN(num_cols,*firstcol+9); 
+
+    return;
+
+    // Display function to be called after this
 }

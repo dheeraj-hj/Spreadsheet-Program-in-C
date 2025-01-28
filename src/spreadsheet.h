@@ -29,7 +29,6 @@ typedef struct{
     spreadsheetbounds *bounds; // Bounds of the spreadsheet
 }spreadsheet;
 
-
 spreadsheet *create_spreadsheet(int rows, int cols); // Create a new spreadsheet
 void free_spreadsheet(spreadsheet *sheet); // Free the memory allocated for the spreadsheet
 void set_cell(spreadsheet *sheet, int row, int col, const char *val); // Set the value of a cell

@@ -14,6 +14,7 @@ spreadsheet *create_spreadsheet(int rows, int cols){
     s->cols = cols;
     s->table = (cell **)malloc(rows * sizeof(cell *));
     s->bounds=(spreadsheetbounds *)malloc(sizeof(spreadsheetbounds));
+    s->bounds=(spreadsheetbounds *)malloc(sizeof(spreadsheetbounds));
     for(int i = 0; i < rows; i++){
         s->table[i] = (cell *)malloc(cols * sizeof(cell));
         for(int j = 0; j < cols; j++){
