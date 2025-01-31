@@ -30,5 +30,5 @@ void display_spreadsheet(spreadsheet *sheet){ // Display the spreadsheet
 // Function to display the status of the last operation
 void display_status(const char *status, int time) {
     // Display the status and the time it took to run the last command
-    printf("[%.1f] (%s) > ", (float)time / 1000, status);
+    printf("[%.1f] (%s) > \n", (float)time , status);
 }

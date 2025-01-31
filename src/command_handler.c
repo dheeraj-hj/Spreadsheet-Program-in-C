@@ -1,12 +1,15 @@
 #include "command_handler.h"
 #include "utils.h"
 #include "spreadsheet.h"
+#include "spreadsheet_display.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
 #include "stdlib.h"
 #include "limits.h"
 #include "math.h" // Use -lm while compiling
+#include "unistd.h"
+#include "time.h"
 
 #define MAX_CELL_NAME 7 // ZZZ999 // have to make it dynamic size
 #define MAX_EXPRESSION 21 // SLEEP(AAA111:ZZZ999)
@@ -17,13 +20,31 @@ void parse_command(spreadsheet* sheet, const char *command){
     char targetcell[MAX_CELL_NAME];
     char expression[MAX_EXPRESSION];
     int error_code = 0;
+    time_t start_time = time(NULL);
     validate_command(sheet ,command , targetcell , expression , &error_code);
-    // if(error_code != 0){
-    //     error_message(error_code);
-    //     return;
-    // }
-}
+    time_t end_time = time(NULL);
+    if(error_code != 0){
+        error_message(error_code);
+        return;
+    }else{
+        int t = (int)(end_time - start_time);
+        display_spreadsheet(sheet);
+        display_status("OK" , t);
+    }
 
+}
+void error_message(int error_code){
+    char *error_messages[] = {
+        "Command not recognized",
+        "INVALID reference to Cell",
+        "INVALID expression",
+        "INVALID range",
+        "Division by zero",
+        "Self reference",
+        "Cycle Formation"
+    };
+    display_status(error_messages[error_code-1] , 0);
+}
 void validate_command(spreadsheet* sheet, const char *cmd , char *targetcell , char *expression , int *error_code){
     /*
         Validates the given commands and assigns work for respective command handling functions
@@ -32,8 +53,17 @@ void validate_command(spreadsheet* sheet, const char *cmd , char *targetcell , c
         2 : INVALID reference to Cell
         3 : INVALID expression
         4 : INVALID range
+        5 : Division by zero
+        6 : Self reference
+        7 : Cycle Formation
     */
     char *command = strdup(cmd);
+    if(strlen(command) == 1){
+        if(command[0] == 'w' || command[0] == 's' || command[0] == 'a' || command[0] == 'd'){
+            handle_control_command(command[0] , sheet);
+            return;
+        }
+    }
     char *equal = strchr(command , '=');
     if(equal == NULL){
         *error_code = 1; // Invalid command
@@ -64,43 +94,42 @@ void validate_command(spreadsheet* sheet, const char *cmd , char *targetcell , c
         free(command);
         return;
     }
-    // printf("Expression Type : %d\n", expr_type);
-    // if(expr_type != -1){
-    //     switch (expr_type){
-    //         case 0: 
-    //             number_assign(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         case 1:
-    //             value_assign(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         case 2:
-    //             operator_assign(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         case 3:
-    //             min_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         case 4:
-    //             max_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         case 5:
-    //             avg_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         case 6:
-    //             sum_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         case 7:
-    //             stdev_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         case 8:
-    //             sleep_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         case 9:
-    //             sleep_handling(sheet , &targetcell_rowid , &targetcell_colid , expression);
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    // }
+    if(expr_type != -1){
+        switch (expr_type){
+            case 0: 
+                number_assign(sheet , &targetcell_rowid , &targetcell_colid , expression);
+                break;
+            case 1:
+                value_assign(sheet , &targetcell_rowid , &targetcell_colid , expression , error_code);
+                break;
+            case 2:
+                operator_assign(sheet , &targetcell_rowid , &targetcell_colid , expression, error_code);
+                break;
+            case 3:
+                min_handling(sheet , &targetcell_rowid , &targetcell_colid , expression, error_code);
+                break;
+            case 4:
+                max_handling(sheet , &targetcell_rowid , &targetcell_colid , expression, error_code);
+                break;
+            case 5:
+                avg_handling(sheet , &targetcell_rowid , &targetcell_colid , expression, error_code);
+                break;
+            case 6:
+                sum_handling(sheet , &targetcell_rowid , &targetcell_colid , expression, error_code);
+                break;
+            case 7:
+                stdev_handling(sheet , &targetcell_rowid , &targetcell_colid , expression, error_code);
+                break;
+            case 8:
+                sleep_handling(sheet , &targetcell_rowid , &targetcell_colid , expression, error_code);
+                break;
+            case 9:
+                sleep_handling(sheet , &targetcell_rowid , &targetcell_colid , expression, error_code);
+                break;
+            default:
+                break;
+        }
+    }
     free(command);
 
 }
@@ -112,24 +141,24 @@ void number_assign(spreadsheet* sheet, int *row , int *col, const char *_expr){
     sheet->table[*row][*col].formula = NULL;
 }
 
-void value_assign(spreadsheet* sheet, int *row , int *col, const char *_expr){
+void value_assign(spreadsheet* sheet, int *row , int *col, const char *_expr , int *error_code){
     char *expr = strdup(_expr);
     int dependent_row;
     int dependent_col;
     valid_cell(sheet , expr , &dependent_row , &dependent_col);
     if(*row == dependent_row && *col == dependent_col){
-        // error_message(6); // Self reference
+        *error_code = 6; // Self reference
         free(expr);
         return;
     }
     int dependent_cell_hash = hash_index(sheet , dependent_row , dependent_col);
     int current_cell_hash = hash_index(sheet , *(row) , *(col));
     if(check_cycle(sheet , &sheet->table[*row][*col] , &dependent_cell_hash)){
-        // error_message(7); // Cycle Formation
+        *error_code = 7; // Cycle Formation
         free(expr);
         return;
     }
-    delete_parent_connections(sheet , &sheet->table[*row][*col]);
+    delete_parent_connections(sheet , &sheet->table[*row][*col] , row , col);
     add_child(&sheet->table[dependent_row][dependent_col] , current_cell_hash);
     add_parent(&sheet->table[*row][*col] , dependent_cell_hash);
     sheet->table[*row][*col].val = sheet->table[dependent_row][dependent_col].val;
@@ -138,7 +167,7 @@ void value_assign(spreadsheet* sheet, int *row , int *col, const char *_expr){
     free(expr);
 }
 
-void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr){
+void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr , int *error_code){
     char *exprdup = strdup(_expr);
     char *operators = "+-*/";
     char *op = strpbrk(exprdup , operators);
@@ -164,13 +193,13 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr)
     }else{
         valid_cell(sheet , left , &left_row , &left_col);
         if(*row == left_row && *col == left_col){
-            // error_message(6); // Self reference
+           *error_code = 6;  // Self reference
             free(exprdup);
             return;
         }
         left_cell_hash = hash_index(sheet , left_row , left_col);
         if(check_cycle(sheet , &sheet->table[*row][*col] , &left_cell_hash)){
-            // error_message(7); // Cycle Formation
+           *error_code = 7; // Cycle Formation
             free(exprdup);
             return;
         } 
@@ -180,18 +209,18 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr)
     }else{
         valid_cell(sheet , right , &right_row , &right_col);
         if(*row == right_row && *col == right_col){
-            // error_message(6); // Self reference
+            *error_code = 6; // Self reference
             free(exprdup);
             return;
         }
         right_cell_hash = hash_index(sheet , right_row , right_col);
         if(check_cycle(sheet , &sheet->table[*row][*col] , &right_cell_hash)){
-            // error_message(7); // Cycle Formation
+            *error_code = 7; // Cycle Formation
             free(exprdup);
             return;
         }
     }
-    delete_parent_connections(sheet , &sheet->table[*row][*col]);
+    delete_parent_connections(sheet , &sheet->table[*row][*col] , row , col);
 
     if(left_row != -1){
         left_val = sheet->table[left_row][left_col].val;
@@ -217,7 +246,7 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr)
             break;
         case '/':
             // if(right_val == 0){
-            //     error_message(5); // Division by zero
+            //     *error_code = 5; // Division by zero
             //     return;
             // }
             sheet->table[*row][*col].val = left_val / right_val;
@@ -230,7 +259,7 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr)
     free(exprdup);
 }
 
-void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr){
+void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , int *error_code){
     // Duplicate expr to work on a modifiable copy
     char *exprdup = strdup(_expr);
 
@@ -258,20 +287,20 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr){
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if (i == *row && j == *col) {
-               // error_message(6); // Self reference
+               *error_code = 6;  // Self reference
                free(exprdup);
                 return;
             }
 
             int dependent_cell_hash = hash_index(sheet, i, j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
-                // error_message(7); // Cycle Formation
+                *error_code = 7;  // Cycle Formation
                 free(exprdup);
                 return;
             }
         }
     }
-    delete_parent_connections(sheet, &sheet->table[*row][*col]);
+    delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
     // printf("parent size : %d \n" , sheet->table[*row][*col].num_parents);
     int min_val = INT_MAX;
     for (int i = row1; i <= row2; i++) {
@@ -292,7 +321,7 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr){
     free(exprdup);
 }
 
-void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr){
+void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr , int *error_code){
     char *exprdup = strndup(_expr, strlen(_expr));
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
@@ -309,19 +338,19 @@ void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr){
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if (i == *row && j == *col) {
-                // error_message(6); // Self reference
+                *error_code = 6;  // Self reference
                 free(exprdup);
                 return;
             }
             int dependent_cell_hash = hash_index(sheet, i, j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
-                // error_message(7); // Cycle Formation
+                *error_code = 7;  // Cycle Formation
                 free(exprdup);
                 return;
             }
         }
     }
-    delete_parent_connections(sheet, &sheet->table[*row][*col]);
+    delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
     int max_val = INT_MIN;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
@@ -335,7 +364,7 @@ void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr){
     free(exprdup);
 }
 
-void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr){
+void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr , int *error_code){
     char *exprdup = strndup(_expr, strlen(_expr));
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
@@ -352,19 +381,19 @@ void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr){
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if (i == *row && j == *col) {
-                // error_message(6); // Self reference
+               *error_code = 6;  // Self reference
                 free(exprdup);
                 return;
             }
             int dependent_cell_hash = hash_index(sheet, i, j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
-                // error_message(7); // Cycle Formation
+                *error_code = 7;  // Cycle Formation
                 free(exprdup);
                 return;
             }
         }
     }
-    delete_parent_connections(sheet, &sheet->table[*row][*col]);
+    delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
     int sum = 0;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
@@ -378,7 +407,7 @@ void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr){
     free(exprdup);
 }
 
-void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr){
+void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr ,int *error_code){
     char *exprdup = strndup(_expr, strlen(_expr));
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
@@ -395,19 +424,19 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr){
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if (i == *row && j == *col) {
-                // error_message(6); // Self reference
+                *error_code = 6;  // Self reference
                 free(exprdup);
                 return;
             }
             int dependent_cell_hash = hash_index(sheet, i, j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
-                // error_message(7); // Cycle Formation
+               *error_code = 7;  // Cycle Formation
                 free(exprdup);
                 return;
             }
         }
     }
-    delete_parent_connections(sheet, &sheet->table[*row][*col]);
+    delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
     float sum = 0;
     float cnt = 0;
     for (int i = row1; i <= row2; i++) {
@@ -425,7 +454,7 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr){
     free(exprdup);
 }
 
-void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr){
+void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr , int *error_code){
     char *exprdup = strndup(_expr, strlen(_expr));
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
@@ -442,19 +471,19 @@ void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr)
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if (i == *row && j == *col) {
-                // error_message(6); // Self reference
+                *error_code = 6;  // Self reference
                 free(exprdup);
                 return;
             }
             int dependent_cell_hash = hash_index(sheet, i, j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
-                // error_message(7); // Cycle Formation
+                *error_code = 7;  // Cycle Formation
                 free(exprdup);
                 return;
             }
         }
     }
-    delete_parent_connections(sheet, &sheet->table[*row][*col]);
+    delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
     float sum = 0;
     float cnt = 0;
     for (int i = row1; i <= row2; i++) {
@@ -480,6 +509,47 @@ void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr)
 
 }
 
+void sleep_handling(spreadsheet* sheet,int *row , int *col,const char *expr , int* error_code){
+    char *exprdup = strdup(expr);
+    char *fun_end = strchr(exprdup, '(');
+    char *range_end = strchr(exprdup, ')');
+    char *cell = fun_end + 1;
+    *fun_end = '\0';
+    *range_end = '\0';
+    int delay_time;
+    if(is_number(cell)){
+        delay_time = atoi(cell);
+    }else{
+        int dependent_row;
+        int dependent_col;
+        valid_cell(sheet , cell , &dependent_row , &dependent_col);
+        if(*row == dependent_row && *col == dependent_col){
+            *error_code = 6; // Self reference
+            free(exprdup);
+            return;
+        }
+        int dependent_cell_hash = hash_index(sheet , dependent_row , dependent_col);
+        int current_cell_hash = hash_index(sheet , *(row) , *(col));
+        if(check_cycle(sheet , &sheet->table[*row][*col] , &dependent_cell_hash)){
+            *error_code = 7; // Cycle Formation
+            free(exprdup);
+            return;
+        }
+        delete_parent_connections(sheet , &sheet->table[*row][*col] , row , col);
+        add_child(&sheet->table[dependent_row][dependent_col] , current_cell_hash);
+        add_parent(&sheet->table[*row][*col] , dependent_cell_hash);
+        delay_time = sheet->table[dependent_row][dependent_col].val;
+    }
+    sheet->table[*row][*col].val = delay_time;
+    // printf("Sleeping for %d seconds\n", delay_time);
+    // time_t s = time(NULL);
+    sleep(delay_time);
+    // time_t e = time(NULL);
+    // int time = (int)(e - s);
+    // printf("Woke up after %d seconds\n", time);
+    free(exprdup);
+}
+
 void handle_control_command(char control,spreadsheet *sheet){
     int num_rows=sheet->rows;
     int num_cols=sheet->cols;
@@ -497,20 +567,13 @@ void handle_control_command(char control,spreadsheet *sheet){
         case 's':
             *firstrow=(*lastrow+10<=num_rows)?*firstrow+10:*firstrow+num_rows-*lastrow;
             *lastrow=MIN(num_rows,*lastrow+10);
-            *firstrow=(*lastrow+10<=num_rows)?*firstrow+10:*firstrow+num_rows-*lastrow;
-            *lastrow=MIN(num_rows,*lastrow+10);
             break;
         case 'd':
             *firstcol=(*lastcol+10<=num_cols)?*firstcol+10:*firstcol+num_cols-*lastcol;
             *lastcol=MIN(num_cols,*lastcol+10);
-            *firstcol=(*lastcol+10<=num_cols)?*firstcol+10:*firstcol+num_cols-*lastcol;
-            *lastcol=MIN(num_cols,*lastcol+10);
             break;
-        case 'q':
-            printf("Quitting the program\n");
-            exit(0);
         default:
-            printf("Invalid command! Use w/a/s/d to scroll or q to quit.\n");
+           break;
         
         // Display function to be called after this
     }
@@ -544,3 +607,5 @@ void scroll_to(spreadsheet *sheet, char *cell){
 
     // Display function to be called after this
 }
+
+

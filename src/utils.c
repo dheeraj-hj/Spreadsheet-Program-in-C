@@ -402,16 +402,18 @@ int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
     return 0;
 }
 
-void delete_parent_connections(spreadsheet *sheet, cell *c){
+void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col){
+    int current_cell_hash = hash_index(sheet , *row , *col);
     for(int i = 0; i < c->num_parents; i++){
         int colm = c->parents[i] % sheet->cols;
         int row = c->parents[i] / sheet->cols;
         cell *parent = &sheet->table[row][colm];
         for(int j = 0; j < parent->num_children; j++){
-            if(parent->children[j] == c->parents[i]){
+            if(parent->children[j] == current_cell_hash){
                 for(int k = j; k < parent->num_children - 1; k++){
                     parent->children[k] = parent->children[k + 1];
                 }
+                // printf("Parent : %d %d\n" , row , colm);
                 parent->num_children--;
                 parent->children = (int *)realloc(parent->children, parent->num_children * sizeof(int));
                 break;

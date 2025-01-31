@@ -19,6 +19,6 @@ void add_child(cell* c , int child_hash);
 void add_parent(cell* c , int parent_hash);
 int hash_index(spreadsheet *sheet , int row, int col);
 int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash);
-void delete_parent_connections(spreadsheet *sheet, cell *c);
+void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col);
 
 #endif
