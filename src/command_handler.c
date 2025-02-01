@@ -45,6 +45,7 @@ void error_message(int error_code){
     };
     display_status(error_messages[error_code-1] , 0);
 }
+
 void validate_command(spreadsheet* sheet, const char *cmd , char *targetcell , char *expression , int *error_code){
     /*
         Validates the given commands and assigns work for respective command handling functions
@@ -134,15 +135,15 @@ void validate_command(spreadsheet* sheet, const char *cmd , char *targetcell , c
 
 }
 
-
 void number_assign(spreadsheet* sheet, int *row , int *col, const char *_expr){
     sheet->table[*row][*col].val = atoi(_expr);
-    sheet->table[*row][*col].dependency = '0';
+    sheet->table[*row][*col].vis = 0;
     sheet->table[*row][*col].formula = NULL;
 }
 
 void value_assign(spreadsheet* sheet, int *row , int *col, const char *_expr , int *error_code){
     char *expr = strdup(_expr);
+    char *expr_to_store = strdup(_expr);
     int dependent_row;
     int dependent_col;
     valid_cell(sheet , expr , &dependent_row , &dependent_col);
@@ -162,13 +163,16 @@ void value_assign(spreadsheet* sheet, int *row , int *col, const char *_expr , i
     add_child(&sheet->table[dependent_row][dependent_col] , current_cell_hash);
     add_parent(&sheet->table[*row][*col] , dependent_cell_hash);
     sheet->table[*row][*col].val = sheet->table[dependent_row][dependent_col].val;
-    sheet->table[*row][*col].dependency = '1';
-    sheet->table[*row][*col].formula = expr;
-    free(expr);
+    sheet->table[*row][*col].vis = 0;
+    printf("expression %s\n" , expr);
+    sheet->table[*row][*col].formula = expr_to_store;
+    printf("expression %s\n" , sheet->table[*row][*col].formula);
+    // free(expr);
 }
 
 void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr , int *error_code){
     char *exprdup = strdup(_expr);
+    char *expr_to_store = strdup(_expr);
     char *operators = "+-*/";
     char *op = strpbrk(exprdup , operators);
     char *left = exprdup;
@@ -254,15 +258,15 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
         default:
             break;
     }
-    sheet->table[*row][*col].dependency = '0';
-    sheet->table[*row][*col].formula = exprdup;
-    free(exprdup);
+    sheet->table[*row][*col].vis = 0;
+    sheet->table[*row][*col].formula = expr_to_store;
+    // free(exprdup);
 }
 
 void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , int *error_code){
     // Duplicate expr to work on a modifiable copy
     char *exprdup = strdup(_expr);
-
+    char *expr_to_store = strdup(_expr);
     // Find function start and range end
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
@@ -316,13 +320,14 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
         }
     }
     sheet->table[*row][*col].val = min_val;
-    sheet->table[*row][*col].formula = exprdup;
+    sheet->table[*row][*col].formula = expr_to_store;
 
-    free(exprdup);
+    // free(exprdup);
 }
 
 void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr , int *error_code){
     char *exprdup = strndup(_expr, strlen(_expr));
+    char *expr_to_store = strdup(_expr);
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
     char *range = fun_end + 1;
@@ -360,12 +365,13 @@ void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr , 
         }
     }
     sheet->table[*row][*col].val = max_val;
-    sheet->table[*row][*col].formula = exprdup;
-    free(exprdup);
+    sheet->table[*row][*col].formula = expr_to_store;
+    // free(exprdup);
 }
 
 void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr , int *error_code){
     char *exprdup = strndup(_expr, strlen(_expr));
+    char *expr_to_store = strdup(_expr);
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
     char *range = fun_end + 1;
@@ -403,12 +409,13 @@ void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr ,
         }
     }
     sheet->table[*row][*col].val = sum;
-    sheet->table[*row][*col].formula = exprdup;
-    free(exprdup);
+    sheet->table[*row][*col].formula = expr_to_store;
+    // free(exprdup);
 }
 
 void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr ,int *error_code){
     char *exprdup = strndup(_expr, strlen(_expr));
+    char *expr_to_store = strdup(_expr);
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
     char *range = fun_end + 1;
@@ -450,12 +457,13 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr ,i
     float favg = sum/cnt;
     int avg = round(favg);
     sheet->table[*row][*col].val = avg;
-    sheet->table[*row][*col].formula = exprdup;
-    free(exprdup);
+    sheet->table[*row][*col].formula = expr_to_store;
+    // free(exprdup);
 }
 
 void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr , int *error_code){
     char *exprdup = strndup(_expr, strlen(_expr));
+    char *expr_to_store = strdup(_expr);
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
     char *range = fun_end + 1;
@@ -504,13 +512,14 @@ void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr 
     float stddev = sqrt(values/cnt);
     int sd = round(stddev);
     sheet->table[*row][*col].val = sd;
-    sheet->table[*row][*col].formula = exprdup;
-    free(exprdup);
+    sheet->table[*row][*col].formula = expr_to_store;
+    // free(exprdup);
 
 }
 
-void sleep_handling(spreadsheet* sheet,int *row , int *col,const char *expr , int* error_code){
-    char *exprdup = strdup(expr);
+void sleep_handling(spreadsheet* sheet,int *row , int *col,const char *_expr , int* error_code){
+    char *exprdup = strdup(_expr);
+    char *expr_to_store = strdup(_expr);
     char *fun_end = strchr(exprdup, '(');
     char *range_end = strchr(exprdup, ')');
     char *cell = fun_end + 1;
@@ -541,13 +550,15 @@ void sleep_handling(spreadsheet* sheet,int *row , int *col,const char *expr , in
         delay_time = sheet->table[dependent_row][dependent_col].val;
     }
     sheet->table[*row][*col].val = delay_time;
+    sheet->table[*row][*col].vis = 0;
+    sheet->table[*row][*col].formula = expr_to_store;
     // printf("Sleeping for %d seconds\n", delay_time);
     // time_t s = time(NULL);
     sleep(delay_time);
     // time_t e = time(NULL);
     // int time = (int)(e - s);
     // printf("Woke up after %d seconds\n", time);
-    free(exprdup);
+    // free(exprdup);
 }
 
 void handle_control_command(char control,spreadsheet *sheet){

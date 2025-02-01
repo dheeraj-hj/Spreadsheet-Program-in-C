@@ -6,7 +6,7 @@
 typedef struct{
     int val;               // Value of the cell
     const char *formula;         // Formula or dependent value of the cell
-    int dependency;        // 0 if no dependency, 1 if dependent formula
+    int vis;        // will be using for recalculating the cell
     int *parents;          // Array of parent cell hashes
     int *children;         // Array of child cell hashes
     int num_parents;       // Number of parent cells
@@ -29,9 +29,20 @@ typedef struct{
     spreadsheetbounds *bounds; // Bounds of the spreadsheet
 }spreadsheet;
 
+typedef struct Stack {
+    int top;
+    int capacity;
+    int* array;
+}Stack;
+
 spreadsheet *create_spreadsheet(int rows, int cols); // Create a new spreadsheet
 void free_spreadsheet(spreadsheet *sheet); // Free the memory allocated for the spreadsheet
 void set_cell(spreadsheet *sheet, int row, int col, const char *val); // Set the value of a cell
-int evaluate_cell(spreadsheet *sheet, int row, int col); // Evaluate the value of a cell
+void evaluate_cell(spreadsheet *sheet, int row, int col); // Evaluate the value of a cell
+Stack* createStack(int capacity);
+int isEmpty(Stack* stack);
+void resizeStack(Stack* stack);
+void push(Stack* stack, int item);
+int pop(Stack* stack);
 
 #endif

@@ -4,8 +4,10 @@
 #include "string.h"
 #include "limits.h"
 #include "math.h"
+#include "spreadsheet.h"
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define INIT_SIZE 10
 
 void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *col2){
     char start_cell[10] ={0} ;
@@ -351,7 +353,6 @@ int hash_index(spreadsheet *sheet , int row, int col)   {
     return (row * sheet->cols) + col;
 }
 
-// Calculate the maximum value in the range
 int calculate_max(spreadsheet *sheet, int row1, int col1, int row2, int col2){ 
     int max=INT_MIN; 
     for(int i=row1; i<=row2; i++){
@@ -362,7 +363,6 @@ int calculate_max(spreadsheet *sheet, int row1, int col1, int row2, int col2){
     return max;
 }
 
-// Calculate the minimum value in the range
 int calculate_min(spreadsheet *sheet, int row1, int col1, int row2, int col2){
     int min=INT_MAX;
     for(int i=row1; i<=row2; i++){
@@ -373,7 +373,6 @@ int calculate_min(spreadsheet *sheet, int row1, int col1, int row2, int col2){
     return min;
 }
 
-// Calculate the average value in the range
 int calculate_avg(spreadsheet *sheet, int row1, int col1, int row2, int col2){
     float sum=0;
     float num_cells=(row2-row1+1)*(col2-col1+1);
@@ -385,6 +384,7 @@ int calculate_avg(spreadsheet *sheet, int row1, int col1, int row2, int col2){
     float favg = sum/num_cells;
     return round(favg);
 }
+
 int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
     if(c->num_children == 0){
         return 0;
@@ -423,4 +423,27 @@ void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col
     free(c->parents);
     c->num_parents = 0;
     c->parents = NULL;
+}
+
+void dfs(spreadsheet *sheet , int row , int col , Stack *stk){
+    sheet->table[row][col].vis = 1;
+    for(int i = 0; i < sheet->table[row][col].num_children; i++){
+        int c_col = sheet->table[row][col].children[i] % sheet->cols;
+        int c_row = sheet->table[row][col].children[i] / sheet->cols;
+        if(!sheet->table[c_row][c_col].vis){
+            dfs(sheet , c_row , c_col , stk);
+        }
+    }
+    push(stk , hash_index(sheet , row , col));
+}
+void recalculate_dependent_cells(spreadsheet *sheet , int *row ,int *col){
+    Stack *stk = createStack(INIT_SIZE);   
+    dfs(sheet , *row , *col , stk);
+    pop(stk);
+    while(!isEmpty(stk)){
+        int cell_hash = pop(stk);
+        int _col = cell_hash % sheet->cols;
+        int _row = cell_hash / sheet->cols;
+        evaluate_cell(sheet , _row , _col);
+    } 
 }
