@@ -84,7 +84,14 @@ char* colIndex_to_name(int i){
 }
 
 int is_number(const char *val) {
-    for (int i = 0; val[i] != '\0'; i++) {
+    int i;
+    if(val[0] == '-' || val[0] == '+'){
+        i = 1;
+    }
+    else{
+        i = 0;
+    }
+    for (; val[i] != '\0'; i++) {
         if (!(val[i] >= '0' && val[i] <= '9')) {
             return 0;
         }
@@ -136,6 +143,7 @@ int valid_cell(spreadsheet* sheet ,const char *_cell , int *row_id, int *col_id)
     *col_id = *col_id -1; 
     free(cell);
     return 1;
+
 }
 
 int valid_range(spreadsheet *sheet ,const char *_range , int *error_code){
@@ -180,6 +188,9 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
     char *expression = strdup(_expression);
     int row_id;
     int col_id;
+    // printf("Expression : %s\n" , expression);
+    // int i = strncmp(expression , "SLEEP(" , 6);
+    // printf("strcmp value : %d\n " , (strncmp(expression , "SLEEP(" , 6)) );
 
     if(is_number(expression)){
         *expr_type = 0;
@@ -190,20 +201,6 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
         *expr_type = 1;
         free(expression);
         return 1;
-    }
-    else if(strchr(expression, '+') || strchr(expression, '-') || strchr(expression, '*') || strchr(expression, '/')){
-        char *operators = "+-*/";
-        char *op = strpbrk(expression , operators);
-        if(op){
-            char *left = expression;
-            char *right = op+1;
-            *op = '\0';
-            if((is_number(left) || valid_cell(sheet , left ,  &row_id , &col_id)) && (is_number(right) || valid_cell(sheet , right, &row_id , &col_id))){
-                *expr_type = 2;
-                free(expression);
-                return 1;
-            }
-        }
     }
     else if((strncmp(expression, "MIN(" , 4) == 0) ){
         char *fun_end = strchr(expression , '(');
@@ -261,7 +258,7 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
             }
         }
     }
-     else if ((strncmp(expression, "STDEV(" , 6) == 0)) {
+    else if ((strncmp(expression, "STDEV(" , 6) == 0)) {
         char *fun_end = strchr(expression , '(');
         char *range_end = strchr(expression , ')');
         if(fun_end && range_end && range_end > fun_end){
@@ -275,15 +272,20 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
             }
         }
     }
-    else if(strncmp(expression , "SLEEP(" , 6) == 0){
+    else if((strncmp(expression , "SLEEP(" , 6) == 0)){
+        // printf("I am here\n");
+        // printf("Expression : %s\n" , expression);
         char *range_end = strchr(expression , ')');
         char *fun_end = strchr(expression , '(');
+        // printf("range_end : %s\n" , range_end);
+        // printf("fun_end : %s\n" , fun_end);
         if(fun_end && range_end && range_end > fun_end){
             char *time = fun_end + 1;
             *fun_end = '\0';
             *range_end = '\0';
-
+            // printf("Time : %s\n" , time);
             if(is_number(time)){
+                // printf("Time : %s\n" , time);
                 *expr_type = 8;
                 free(expression);
                 return 1;
@@ -297,6 +299,27 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
         }
 
     }
+    else if(strchr(expression, '+') || strchr(expression, '-') || strchr(expression, '*') || strchr(expression, '/')){
+        char *operators = "+-*/";
+        char *op = strpbrk(expression+1 , operators);
+        // printf("op : %s\n" , op);
+        if(op){
+
+            char *left = expression;
+            char *right = op+1;
+            *op = '\0';
+            if(left[0] == '-' || left[0] == '+'){
+                left++;
+            }
+            // printf("left : %s right : %s\n" , left , right);
+            if((is_number(left) || valid_cell(sheet , left ,  &row_id , &col_id)) && (is_number(right) || valid_cell(sheet , right, &row_id , &col_id))){
+                *expr_type = 2;
+                free(expression);
+                return 1;
+            }
+        }
+    }
+    // printf("Expression : %s\n" , expression);
     free(expression);
     return 0;
 }
@@ -436,6 +459,7 @@ void dfs(spreadsheet *sheet , int row , int col , Stack *stk){
     }
     push(stk , hash_index(sheet , row , col));
 }
+
 void dfs2(spreadsheet *sheet , int row , int col){
     sheet->table[row][col].vis = 0;
     for(int i = 0; i < sheet->table[row][col].num_children; i++){
@@ -446,6 +470,7 @@ void dfs2(spreadsheet *sheet , int row , int col){
         }
     }
 }
+
 void recalculate_dependent_cells(spreadsheet *sheet , int *row ,int *col){
     Stack *stk = createStack(INIT_SIZE);   
     dfs(sheet , *row , *col , stk);

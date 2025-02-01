@@ -4,6 +4,8 @@
 #include "stddef.h"
 #include "string.h"
 #include "math.h"
+#include "unistd.h"
+#include "spreadsheet_display.h"
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
@@ -34,6 +36,8 @@ spreadsheet *create_spreadsheet(int rows, int cols){
     *(s->bounds->first_col)=1;
     *(s->bounds->last_row)=MIN(rows,10);
     *(s->bounds->last_col)=MIN(cols,10);
+    display_spreadsheet(s);
+    display_status("OK",0);
     return s;
 }
 
@@ -112,6 +116,23 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         int sd = round(stddev);
         sheet->table[row][col].val = sd;
     }
+    else if(strncmp(formula , "SLEEP(" , 6) == 0){
+        char *cell_end = strchr(formula , ')');
+        char *cell = formula + 6;
+        *cell_end = '\0';
+        int delay_time;
+        if(is_number(cell)){
+            delay_time = atoi(cell);
+        }
+        else{
+            int cell_row;
+            int cell_col;
+            name_to_indices(cell , &cell_row , &cell_col);
+            delay_time = sheet->table[cell_row][cell_col].val;
+        }
+        sheet->table[row][col].val = delay_time;
+        sleep(delay_time);
+    }
     else{
         int left_val;
         int right_val;
@@ -122,7 +143,7 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         int left_cell_hash;
         int right_cell_hash;
         char *operators = "+-*/";
-        char *op = strpbrk(formula , operators);
+        char *op = strpbrk(formula+1 , operators);
         char *left = formula;
         char *right = op + 1;
         char operation = *op;

@@ -23,6 +23,7 @@ void parse_command(spreadsheet* sheet, const char *command){
     time_t start_time = time(NULL);
     validate_command(sheet ,command , targetcell , expression , &error_code);
     time_t end_time = time(NULL);
+    // printf("Error code : %d\n" , error_code);
     if(error_code != 0){
         error_message(error_code);
         return;
@@ -33,6 +34,7 @@ void parse_command(spreadsheet* sheet, const char *command){
     }
 
 }
+
 void error_message(int error_code){
     char *error_messages[] = {
         "Command not recognized",
@@ -93,8 +95,10 @@ void validate_command(spreadsheet* sheet, const char *cmd , char *targetcell , c
         }
         *error_code = 3; // Invalid Expression
         free(command);
+        // printf("Error code : %d\n" , *error_code);
         return;
     }
+    // printf("Expression type : %d\n" , expr_type);
     if(expr_type != -1){
         switch (expr_type){
             case 0: 
@@ -139,6 +143,7 @@ void number_assign(spreadsheet* sheet, int *row , int *col, const char *_expr){
     sheet->table[*row][*col].val = atoi(_expr);
     sheet->table[*row][*col].vis = 0;
     sheet->table[*row][*col].formula = NULL;
+    recalculate_dependent_cells(sheet , row , col);
 }
 
 void value_assign(spreadsheet* sheet, int *row , int *col, const char *_expr , int *error_code){
@@ -164,9 +169,10 @@ void value_assign(spreadsheet* sheet, int *row , int *col, const char *_expr , i
     add_parent(&sheet->table[*row][*col] , dependent_cell_hash);
     sheet->table[*row][*col].val = sheet->table[dependent_row][dependent_col].val;
     sheet->table[*row][*col].vis = 0;
-    printf("expression %s\n" , expr);
+    // printf("expression %s\n" , expr);
     sheet->table[*row][*col].formula = expr_to_store;
-    printf("expression %s\n" , sheet->table[*row][*col].formula);
+    // printf("expression %s\n" , sheet->table[*row][*col].formula);
+    recalculate_dependent_cells(sheet , row , col);
     // free(expr);
 }
 
@@ -174,16 +180,19 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
     char *exprdup = strdup(_expr);
     char *expr_to_store = strdup(_expr);
     char *operators = "+-*/";
-    char *op = strpbrk(exprdup , operators);
+    char *op = strpbrk(exprdup+1 , operators);
     char *left = exprdup;
     char *right = op + 1;
     char operation = *op;
-    for(int i = 0; i < strlen(left); i++){
+    int i = 1;
+    for(; i < strlen(left); i++){
         if(left[i] == '+' || left[i] == '-' || left[i] == '*' || left[i] == '/'){
             left[i] = '\0';
         }
     }
+    // printf("left : %s right : %s\n" , left , right);     
     int left_val;
+    int left_mul = 1;
     int right_val;
     int left_row=-1;
     int left_col;
@@ -195,6 +204,13 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
     if(is_number(left)){
         left_val = atoi(left);
     }else{
+        if(left[0] == '-'){
+            left_mul = -1;
+            left++;
+        }
+        if(left[0] == '+'){
+            left++;
+        }
         valid_cell(sheet , left , &left_row , &left_col);
         if(*row == left_row && *col == left_col){
            *error_code = 6;  // Self reference
@@ -227,7 +243,7 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
     delete_parent_connections(sheet , &sheet->table[*row][*col] , row , col);
 
     if(left_row != -1){
-        left_val = sheet->table[left_row][left_col].val;
+        left_val = sheet->table[left_row][left_col].val * left_mul;
         add_child(&sheet->table[left_row][left_col] , current_cell_hash);
         add_parent(&sheet->table[*row][*col] , left_cell_hash);
     }
@@ -236,6 +252,8 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
         add_child(&sheet->table[right_row][right_col] , current_cell_hash);
         add_parent(&sheet->table[*row][*col] , right_cell_hash);
     }
+    // printf("left val %d right val %d\n" , left_val , right_val);
+    
     // printf("left val %d right val %d\n" , left_val , right_val);
     // printf("Operation %c\n" , operation);
     switch (operation){
@@ -260,6 +278,7 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
     }
     sheet->table[*row][*col].vis = 0;
     sheet->table[*row][*col].formula = expr_to_store;
+    recalculate_dependent_cells(sheet , row , col);
     // free(exprdup);
 }
 
@@ -321,7 +340,7 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
     }
     sheet->table[*row][*col].val = min_val;
     sheet->table[*row][*col].formula = expr_to_store;
-
+    recalculate_dependent_cells(sheet , row , col);
     // free(exprdup);
 }
 
@@ -366,6 +385,7 @@ void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr , 
     }
     sheet->table[*row][*col].val = max_val;
     sheet->table[*row][*col].formula = expr_to_store;
+    recalculate_dependent_cells(sheet , row , col);
     // free(exprdup);
 }
 
@@ -410,6 +430,7 @@ void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr ,
     }
     sheet->table[*row][*col].val = sum;
     sheet->table[*row][*col].formula = expr_to_store;
+    recalculate_dependent_cells(sheet , row , col);
     // free(exprdup);
 }
 
@@ -458,6 +479,7 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr ,i
     int avg = round(favg);
     sheet->table[*row][*col].val = avg;
     sheet->table[*row][*col].formula = expr_to_store;
+    recalculate_dependent_cells(sheet , row , col);
     // free(exprdup);
 }
 
@@ -513,6 +535,7 @@ void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr 
     int sd = round(stddev);
     sheet->table[*row][*col].val = sd;
     sheet->table[*row][*col].formula = expr_to_store;
+    recalculate_dependent_cells(sheet , row , col);
     // free(exprdup);
 
 }
@@ -558,6 +581,7 @@ void sleep_handling(spreadsheet* sheet,int *row , int *col,const char *_expr , i
     // time_t e = time(NULL);
     // int time = (int)(e - s);
     // printf("Woke up after %d seconds\n", time);
+    recalculate_dependent_cells(sheet , row , col);
     // free(exprdup);
 }
 
