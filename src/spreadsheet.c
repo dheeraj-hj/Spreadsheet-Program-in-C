@@ -131,7 +131,9 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
             delay_time = sheet->table[cell_row][cell_col].val;
         }
         sheet->table[row][col].val = delay_time;
-        sleep(delay_time);
+        if(delay_time > 0){
+            sleep(delay_time);
+        }
     }
     else{
         int left_val;
@@ -140,6 +142,7 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         int left_col;
         int right_row=-1;
         int right_col;
+        int leftmul = 1;
         int left_cell_hash;
         int right_cell_hash;
         char *operators = "+-*/";
@@ -147,7 +150,7 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         char *left = formula;
         char *right = op + 1;
         char operation = *op;
-        for(int i = 0; i < strlen(left); i++){
+        for(int i = 1; i < strlen(left); i++){
             if(left[i] == '+' || left[i] == '-' || left[i] == '*' || left[i] == '/'){
                 left[i] = '\0';
             }
@@ -156,8 +159,15 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
             left_val = atoi(left);
         }
         else{
+            if(left[0] == '-'){
+                leftmul = -1;
+                left++;
+            }
+            if(left[0] == '+'){
+                left++;
+            }
             name_to_indices(left , &left_row , &left_col);
-            left_val = sheet->table[left_row][left_col].val;
+            left_val = sheet->table[left_row][left_col].val * leftmul;
         }
         if(is_number(right)){
             right_val = atoi(right);

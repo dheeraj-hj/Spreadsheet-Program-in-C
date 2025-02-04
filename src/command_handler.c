@@ -16,6 +16,8 @@
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
+int display = 2;
+
 void parse_command(spreadsheet* sheet, const char *command){
     char targetcell[MAX_CELL_NAME];
     char expression[MAX_EXPRESSION];
@@ -24,18 +26,22 @@ void parse_command(spreadsheet* sheet, const char *command){
     validate_command(sheet ,command , targetcell , expression , &error_code);
     time_t end_time = time(NULL);
     // printf("Error code : %d\n" , error_code);
+    int t = (int)(end_time - start_time);
     if(error_code != 0){
-        error_message(error_code);
+        error_message(error_code , t);
         return;
     }else{
-        int t = (int)(end_time - start_time);
-        display_spreadsheet(sheet);
+        if(display == 2){
+            display_spreadsheet(sheet);
+        }
         display_status("OK" , t);
     }
-
+    if(display == 1){
+        display = 2;
+    }
 }
 
-void error_message(int error_code){
+void  error_message(int error_code , int time){
     char *error_messages[] = {
         "Command not recognized",
         "INVALID reference to Cell",
@@ -45,7 +51,7 @@ void error_message(int error_code){
         "Self reference",
         "Cycle Formation"
     };
-    display_status(error_messages[error_code-1] , 0);
+    display_status(error_messages[error_code-1] , time);
 }
 
 void validate_command(spreadsheet* sheet, const char *cmd , char *targetcell , char *expression , int *error_code){
@@ -66,6 +72,21 @@ void validate_command(spreadsheet* sheet, const char *cmd , char *targetcell , c
             handle_control_command(command[0] , sheet);
             return;
         }
+    }
+    if(strncmp(command , "scroll_to " , 10) == 0){
+        scroll_to(sheet , command + 10 , error_code);
+        free(command);
+        return;
+    }
+    if(strncmp(command , "disable_output" , 14) == 0){
+        display = 0;
+        free(command);
+        return;
+    }
+    if(strncmp(command , "enable_output" , 13) == 0){
+        display = 1;
+        free(command);
+        return;
     }
     char *equal = strchr(command , '=');
     if(equal == NULL){
@@ -577,7 +598,9 @@ void sleep_handling(spreadsheet* sheet,int *row , int *col,const char *_expr , i
     sheet->table[*row][*col].formula = expr_to_store;
     // printf("Sleeping for %d seconds\n", delay_time);
     // time_t s = time(NULL);
-    sleep(delay_time);
+    if(delay_time > 0){
+        sleep(delay_time);
+    }
     // time_t e = time(NULL);
     // int time = (int)(e - s);
     // printf("Woke up after %d seconds\n", time);
@@ -614,7 +637,7 @@ void handle_control_command(char control,spreadsheet *sheet){
     }
 }
 
-void scroll_to(spreadsheet *sheet, char *cell){
+void scroll_to(spreadsheet *sheet, const char *cell , int *error_code){
     // The check for output suppressed to be done before calling this function
     int num_rows=sheet->rows;
     int num_cols=sheet->cols;
@@ -622,17 +645,13 @@ void scroll_to(spreadsheet *sheet, char *cell){
     int *lastrow=sheet->bounds->last_row,*lastcol=sheet->bounds->last_col;  
 
     int row,col;
-    name_to_indices(cell,&row,&col); // Convert the cell name to row and column indices
-
-    row+=1,col+=1;
-    if(row>num_rows || col>num_cols){
-        printf("Invalid cell name\n");
+    if(!valid_cell(sheet,cell,&row,&col)){
+       *error_code = 2;
         return;
     }
-
     // This is the top left cell
-    *firstrow=row; 
-    *firstcol=col; 
+    *firstrow=row+1; 
+    *firstcol=col+1; 
 
     // This is the bottom right cell
     *lastrow=MIN(num_rows,*firstrow+9); 
