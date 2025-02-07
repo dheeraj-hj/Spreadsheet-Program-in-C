@@ -42,6 +42,13 @@ spreadsheet *create_spreadsheet(int rows, int cols){
 }
 
 void evaluate_cell(spreadsheet *sheet , int row , int col){
+    /*
+        This function will evaluate the cell again based on the formula stored in the cell
+        Input:
+        - sheet : pointer to the spreadsheet
+        - row : integer row index
+        - col : integer col index
+    */
     if(sheet->table[row][col].formula == NULL){
         return;
     }
@@ -143,6 +150,7 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         int right_row=-1;
         int right_col;
         int leftmul = 1;
+        int rightmul = 1;
         int left_cell_hash;
         int right_cell_hash;
         char *operators = "+-*/";
@@ -150,11 +158,7 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         char *left = formula;
         char *right = op + 1;
         char operation = *op;
-        for(int i = 1; i < strlen(left); i++){
-            if(left[i] == '+' || left[i] == '-' || left[i] == '*' || left[i] == '/'){
-                left[i] = '\0';
-            }
-        }
+        *op = '\0';
         if(is_number(left)){
             left_val = atoi(left);
         }
@@ -173,8 +177,15 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
             right_val = atoi(right);
         }
         else{
+            if(right[0] == '-'){
+                rightmul = -1;
+                right++;
+            }
+            if(right[0] == '+'){
+                right++;
+            }
             name_to_indices(right , &right_row , &right_col);
-            right_val = sheet->table[right_row][right_col].val;
+            right_val = sheet->table[right_row][right_col].val * rightmul;
         }
         switch(operation){
             case '+':
@@ -187,6 +198,7 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
                 sheet->table[row][col].val = left_val * right_val;
                 break;
             case '/':
+                // Divison by zero yet to be considered
                 sheet->table[row][col].val = left_val / right_val;
                 break;
             default:

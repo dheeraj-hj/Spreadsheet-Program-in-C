@@ -5,7 +5,7 @@
 char* colIndex_to_name(const int i);
 void name_to_indices(const char *name, int *row, int *col); // Convert the cell name to row and column indices
 void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *col2); // Convert the range to row and column indices
-char* trim_space(char *str); // Trim the leading and trailing spaces from a string
+char* trim_space(const char *str); // Trim the leading and trailing spaces from a string
 int is_number(const char *val); // Check if a string is a number
 int valid_cell(spreadsheet* sheet ,const char *cell , int *row_id , int *col_id);
 int valid_range(spreadsheet *sheet , const char *range , int *error_code);

@@ -25,6 +25,9 @@ int main(int argc, char *argv[]){
         if (fgets(command, MAX_CMD_LENGTH, stdin) == NULL) {
             continue;
         }
+        if (command[strlen(command) - 1] != '\n') {
+            display_status("Invalid Command", 0);
+        }
         command[strcspn(command, "\n")] = '\0';
         if (strcmp(command, "q") == 0) {
             break;

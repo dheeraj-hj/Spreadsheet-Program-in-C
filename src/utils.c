@@ -10,40 +10,49 @@
 #define INIT_SIZE 10
 
 void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *col2){
+    /*
+        This function will analyze range and stores upper and lower bound values of range
+        in row1,col1 and row2,col2. If given range string is invalid row1 col1 row2 col2
+        would be storing -1 
+        Input:
+        - range : string range of format {cell}:{cell}
+        - row1 , col1, row2 , col2 : pointer to corresponding integers 
+    */
     char start_cell[10] ={0} ;
     char end_cell[10] ={0};
     int i =0,j  = 0 ;
-
     while (isalpha(range[i])  || isdigit(range[i])) {
         start_cell[j++] =  range[i++]  ;
     }
     start_cell[j] ='\0';
-
     if (range[i] == ':') {
         i++ ;
     } else {
         *row1 = *col1  = *row2 = *col2 =-1 ;
         return ;
     }
-
     j= 0 ;
     while (isalpha(range[i]) || isdigit(range[i])) {
         end_cell[j++] = range[i++];
     }
     end_cell[j] ='\0' ;
-
     name_to_indices(start_cell, row1, col1);
     name_to_indices(end_cell, row2, col2) ;
-
-        // just checking if index are positive or not.
-        if (*row1 <0 || *col1 <0 || *row2< 0 || *col2 < 0) {
-            // Handle invalid indices
-            *row1 = *col1 = *row2 = *col2 =-1 ;
-        }
-    return ;
+    if(*row1 <0 || *col1 <0 || *row2< 0 || *col2 < 0) {
+        *row1 = *col1 = *row2 = *col2 =-1 ;
+    }
+    return;
 }
 
 void name_to_indices(const char *name, int *row, int *col){
+    /*
+        Takes cell as input and break it down to row and column index and stores it in
+        row and col
+        - name : string cell, eg A2,CX394 
+        - row : pointer to the row index
+        - col : pointer to the col index
+
+    */
     *col=0;
     *row=0;
     int i= 0;
@@ -84,6 +93,14 @@ char* colIndex_to_name(int i){
 }
 
 int is_number(const char *val) {
+    /*
+        This function checks if the input string is a number
+        Input:
+        - val : input string
+        Return:
+        - 0 : if string is not a number
+        - 1 : if string is a number
+    */
     int i;
     if(val[0] == '-' || val[0] == '+'){
         i = 1;
@@ -100,6 +117,18 @@ int is_number(const char *val) {
 }
 
 int valid_cell(spreadsheet* sheet ,const char *_cell , int *row_id, int *col_id){
+    /*
+        This function takes a cell value input and checks weather the input cell is in correct format 
+        and cell bounded inside the sheet
+        Input:
+        - sheet : pointer to the spreadsheet
+        - _cell : cell value input
+        - row_id : pointer to store row index in zero based index
+        - col_id : pointer to store column index in zero based index
+        Return:
+        - 0 : if cell is invalid
+        - 1 : if cell is valid and row_id, col_id stores the 0 based index of row and column
+    */
     char* cell = strdup(_cell);
     int i = 0;
     while(cell[i] && isalpha(cell[i])){
@@ -147,6 +176,17 @@ int valid_cell(spreadsheet* sheet ,const char *_cell , int *row_id, int *col_id)
 }
 
 int valid_range(spreadsheet *sheet ,const char *_range , int *error_code){
+    /*
+        This function takes a range value input and checks weather the input range is in correct format 
+        and range bounded inside the sheet
+        Input:
+        - sheet : pointer to the spreadsheet
+        - _range : range value input
+        - error_code : pointer to store the error code (1 if range is invalid)
+        Return:
+        - 0 : if range is invalid
+        - 1 : if range is valid
+    */
     char *range = strdup(_range);
     char *colon = strchr(range , ':');
     if(colon){
@@ -170,10 +210,9 @@ int valid_range(spreadsheet *sheet ,const char *_range , int *error_code){
 }
 
 int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_type , int *error_code){
-
 /*
-    Function will return 0 if invalid expression and 1 if valid expression
-    It will also return expression type:
+    This function will check weather input expression is valid and assigns the type of expression
+    Value of expr_type (if valid expression):
     0 - number
     1 - cell
     2 - val (operator) val
@@ -184,14 +223,18 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
     7 - STDEV
     8 - SLEEP(number)
     9 - SLEEP(cell)
+    Input:
+    - sheet : pointer to the spreadsheet
+    - _expression : expression to validate
+    - expr_type : pointer to store the type of expression
+    - error_code : pointer to store the error code
+    Return:
+    - 0 : if expression is invalid
+    - 1 : if expression is valid and expr_type stores the type of expression
 */
     char *expression = strdup(_expression);
     int row_id;
     int col_id;
-    // printf("Expression : %s\n" , expression);
-    // int i = strncmp(expression , "SLEEP(" , 6);
-    // printf("strcmp value : %d\n " , (strncmp(expression , "SLEEP(" , 6)) );
-
     if(is_number(expression)){
         *expr_type = 0;
         free(expression);
@@ -273,19 +316,13 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
         }
     }
     else if((strncmp(expression , "SLEEP(" , 6) == 0)){
-        // printf("I am here\n");
-        // printf("Expression : %s\n" , expression);
         char *range_end = strchr(expression , ')');
         char *fun_end = strchr(expression , '(');
-        // printf("range_end : %s\n" , range_end);
-        // printf("fun_end : %s\n" , fun_end);
         if(fun_end && range_end && range_end > fun_end){
             char *time = fun_end + 1;
             *fun_end = '\0';
             *range_end = '\0';
-            // printf("Time : %s\n" , time);
             if(is_number(time)){
-                // printf("Time : %s\n" , time);
                 *expr_type = 8;
                 free(expression);
                 return 1;
@@ -302,7 +339,6 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
     else if(strchr(expression, '+') || strchr(expression, '-') || strchr(expression, '*') || strchr(expression, '/')){
         char *operators = "+-*/";
         char *op = strpbrk(expression+1 , operators);
-        // printf("op : %s\n" , op);
         if(op){
 
             char *left = expression;
@@ -311,7 +347,6 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
             if(left[0] == '-' || left[0] == '+'){
                 left++;
             }
-            // printf("left : %s right : %s\n" , left , right);
             if((is_number(left) || valid_cell(sheet , left ,  &row_id , &col_id)) && (is_number(right) || valid_cell(sheet , right, &row_id , &col_id))){
                 *expr_type = 2;
                 free(expression);
@@ -319,12 +354,17 @@ int valid_expression(spreadsheet* sheet, const char *_expression , int *expr_typ
             }
         }
     }
-    // printf("Expression : %s\n" , expression);
     free(expression);
     return 0;
 }
 
 void add_child(cell *c, int child_hash) {
+    /*
+        This function will add the child hash value to a cell if it is not already present
+        Input:
+        - c : cell pointer
+        - child_hash : integer value of child hash to store
+    */
     if(c->children == NULL){
         c->children = malloc(sizeof(int));
         if (c->children == NULL) {
@@ -349,7 +389,12 @@ void add_child(cell *c, int child_hash) {
 }
 
 void add_parent(cell *c, int parent_hash) {
-
+    /*
+        This function will add the parent hash value to a cell 
+        Input:
+        - c : cell pointer
+        - parent_hash : integer value of parent hash to store
+    */
     if (c->parents == NULL) {
         c->parents = malloc(sizeof(int));
         if (c->parents == NULL) {
@@ -359,56 +404,45 @@ void add_parent(cell *c, int parent_hash) {
         c->num_parents = 0;
     }
 
-    // Allocate new space
     int *new_parents = realloc(c->parents, (c->num_parents + 1) * sizeof(int));
     if (new_parents == NULL) {
         fprintf(stderr, "Memory allocation failed in add_parent\n");
         return;
     }
 
-    // Update pointer and add new parent
     c->parents = new_parents;
     c->parents[c->num_parents] = parent_hash;
     c->num_parents++;
 }
 
-int hash_index(spreadsheet *sheet , int row, int col)   {
+int hash_index(spreadsheet *sheet , int row, int col) {
+    /*
+        Returns the hash value of a cell in following format
+        ( for nx6 grid 
+          0  1  2  3  4   5
+          6  7  8  9  10  11
+          ..... )
+        Input :
+        - sheet : pointer to the spreadsheet
+        - row : integer row of a cell
+        - col : integer column of a cell
+    */
     return (row * sheet->cols) + col;
 }
 
-int calculate_max(spreadsheet *sheet, int row1, int col1, int row2, int col2){ 
-    int max=INT_MIN; 
-    for(int i=row1; i<=row2; i++){
-        for(int j=col1; j<=col2; j++){
-            max=MAX(sheet->table[i][j].val,max);
-        }
-    }
-    return max;
-}
-
-int calculate_min(spreadsheet *sheet, int row1, int col1, int row2, int col2){
-    int min=INT_MAX;
-    for(int i=row1; i<=row2; i++){
-        for(int j=col1; j<=col2; j++){
-            min=MIN(sheet->table[i][j].val,min);
-        }
-    }
-    return min;
-}
-
-int calculate_avg(spreadsheet *sheet, int row1, int col1, int row2, int col2){
-    float sum=0;
-    float num_cells=(row2-row1+1)*(col2-col1+1);
-    for(int i=row1; i<=row2; i++){
-        for(int j=col1; j<=col2; j++){
-            sum+=sheet->table[i][j].val;
-        }
-    }
-    float favg = sum/num_cells;
-    return round(favg);
-}
-
 int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
+    /*
+        This function reccursively checks the presence of cycle
+        It checks weather the given target cell hash values present 
+        anywhere among their childern
+        Input:
+        - sheet : pointer to the spreadsheet
+        - c : cell pointer
+        - target_cell_hash : point to hash value of target cell
+        Return:
+        0 : If there is no cycle
+        1 : If there is a presence of cycle
+    */
     if(c->num_children == 0){
         return 0;
     }
@@ -426,17 +460,24 @@ int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
 }
 
 void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col){
+    /*
+        This function deletes all the connection from its parent and frees the parent array
+        Input:
+        - sheet : pointer to the spreadsheet
+        - c : cell pointer
+        - row : pointer to the row index
+        - col : pointer to the col index
+    */
     int current_cell_hash = hash_index(sheet , *row , *col);
     for(int i = 0; i < c->num_parents; i++){
         int colm = c->parents[i] % sheet->cols;
-        int row = c->parents[i] / sheet->cols;
-        cell *parent = &sheet->table[row][colm];
+        int prow = c->parents[i] / sheet->cols;
+        cell *parent = &sheet->table[prow][colm];
         for(int j = 0; j < parent->num_children; j++){
             if(parent->children[j] == current_cell_hash){
                 for(int k = j; k < parent->num_children - 1; k++){
                     parent->children[k] = parent->children[k + 1];
                 }
-                // printf("Parent : %d %d\n" , row , colm);
                 parent->num_children--;
                 parent->children = (int *)realloc(parent->children, parent->num_children * sizeof(int));
                 break;
@@ -449,6 +490,9 @@ void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col
 }
 
 void dfs(spreadsheet *sheet , int row , int col , Stack *stk){
+    /*
+        This performs dfs if visit value of cell is 0
+    */
     sheet->table[row][col].vis = 1;
     for(int i = 0; i < sheet->table[row][col].num_children; i++){
         int c_col = sheet->table[row][col].children[i] % sheet->cols;
@@ -461,6 +505,9 @@ void dfs(spreadsheet *sheet , int row , int col , Stack *stk){
 }
 
 void dfs2(spreadsheet *sheet , int row , int col){
+     /*
+        This performs dfs if visit value of cell is 1
+    */
     sheet->table[row][col].vis = 0;
     for(int i = 0; i < sheet->table[row][col].num_children; i++){
         int c_col = sheet->table[row][col].children[i] % sheet->cols;
@@ -472,6 +519,13 @@ void dfs2(spreadsheet *sheet , int row , int col){
 }
 
 void recalculate_dependent_cells(spreadsheet *sheet , int *row ,int *col){
+    /*
+        This will perform Topological sort algorithm to recalculate all its dependent cells
+        Input :
+        - sheet : pointer to the spreadsheet
+        - row : pointer to the row index
+        - col : pointer to the col index
+    */
     Stack *stk = createStack(INIT_SIZE);   
     dfs(sheet , *row , *col , stk);
     pop(stk);
