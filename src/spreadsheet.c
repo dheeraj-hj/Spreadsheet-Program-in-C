@@ -235,3 +235,25 @@ void push(Stack* stack, int item) {
 int pop(Stack* stack) {
     return stack->array[stack->top--];
 }
+
+void free_spreadsheet(spreadsheet *sheet) {
+    if (sheet == NULL) return;
+    for (int i = 0; i < sheet->rows; i++) {
+        for (int j = 0; j < sheet->cols; j++) {
+            cell *c = &sheet->table[i][j];
+            free((char *)c->formula); 
+            free(c->parents);
+            free(c->children);
+        }
+        free(sheet->table[i]);
+    }
+    free(sheet->table);
+    if (sheet->bounds) {
+        free(sheet->bounds->first_row);
+        free(sheet->bounds->first_col);
+        free(sheet->bounds->last_row);
+        free(sheet->bounds->last_col);
+        free(sheet->bounds);
+    }
+    free(sheet);
+}

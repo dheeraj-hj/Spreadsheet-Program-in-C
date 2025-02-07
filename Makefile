@@ -1,28 +1,41 @@
-# Compiler and flags
+# Compiler
 CC = gcc
-CFLAGS = -Wall -g -std=c11 # Use C11 standard for reliability
 
-# Source files and object files
-SRCS = main.c src/spreadsheet.c src/spreadsheet_display.c src/utils.c src/command_handler.c
-OBJS = $(SRCS:.c=.o)
+# Compiler flags
+CFLAGS = -Wall -Wextra -std=c11 -g -D_GNU_SOURCE		
 
-# Target executable
-TARGET = spreadsheet
+# Source files
+SRC = main.c src/spreadsheet.c src/utils.c src/command_handler.c src/spreadsheet_display.c
 
-# Default rule: Build the target
+# Object files
+OBJ = $(SRC:.c=.o)
+
+# Executable name
+TARGET = sheet
+
+# Default rule: Build the sheet executable
 all: $(TARGET)
 
-# Rule to create the target executable
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+# Compile the executable
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lm
 
-# Rule to compile each .c file into .o file
+# Compile each C file into an object file
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean rule: Remove generated files
-clean:
-	rm -f $(OBJS) $(TARGET)
+# Run test cases
+test: $(TARGET)
+	./tests/run_tests.sh  # Replace with your test script
 
-# Phony targets
-.PHONY: all clean
+# Generate report
+report:
+	pdflatex report.tex   # Assumes you have a LaTeX report source file
+
+# Clean build files
+clean:
+	rm -f $(OBJ) $(TARGET)
+
+# Clean everything, including report files
+distclean: clean
+	rm -f report.pdf
