@@ -15,23 +15,27 @@ spreadsheet *create_spreadsheet(int rows, int cols){
     s->cols = cols;
     s->table = (cell **)malloc(rows * sizeof(cell *));
     s->bounds=(spreadsheetbounds *)malloc(sizeof(spreadsheetbounds));
-    s->bounds=(spreadsheetbounds *)malloc(sizeof(spreadsheetbounds));
     for(int i = 0; i < rows; i++){
         s->table[i] = (cell *)malloc(cols * sizeof(cell));
         for(int j = 0; j < cols; j++){
             s->table[i][j].val = 0;
             s->table[i][j].vis = 0;
             s->table[i][j].formula = NULL;
-            s->table[i][j].parents = NULL;
-            s->table[i][j].children = NULL;
-            s->table[i][j].num_parents = 0;
-            s->table[i][j].num_children = 0;
+            s->table[i][j].children.data = malloc(4 * sizeof(int));
+            s->table[i][j].children.size = 0;
+            s->table[i][j].children.capacity = 4;
+            s->table[i][j].parents.data = malloc(4 * sizeof(int));
+            s->table[i][j].parents.size = 0;
+            s->table[i][j].parents.capacity = 4;
+    //         arr->data = malloc(initial * sizeof(int));
+    // arr->size = 0;
+    // arr->capacity = initial;
         }
     }
-    s->bounds->first_row=(int *)malloc(sizeof(int));
-    s->bounds->first_col=(int *)malloc(sizeof(int));
-    s->bounds->last_row=(int *)malloc(sizeof(int));
-    s->bounds->last_col=(int *)malloc(sizeof(int));
+    s->bounds->first_row = (int *)malloc(sizeof(int));
+    s->bounds->first_col = (int *)malloc(sizeof(int));
+    s->bounds->last_row = (int *)malloc(sizeof(int));
+    s->bounds->last_col = (int *)malloc(sizeof(int));
     *(s->bounds->first_row)=1;
     *(s->bounds->first_col)=1;
     *(s->bounds->last_row)=MIN(rows,10);
@@ -207,6 +211,11 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
     }
     
 }
+void init_int_array(IntArray* arr, size_t initial) {
+    arr->data = malloc(initial * sizeof(int));
+    arr->size = 0;
+    arr->capacity = initial;
+}
 
 Stack* createStack(int capacity) {
     Stack* stack = (Stack*)malloc(sizeof(Stack));
@@ -234,26 +243,4 @@ void push(Stack* stack, int item) {
 
 int pop(Stack* stack) {
     return stack->array[stack->top--];
-}
-
-void free_spreadsheet(spreadsheet *sheet) {
-    if (sheet == NULL) return;
-    for (int i = 0; i < sheet->rows; i++) {
-        for (int j = 0; j < sheet->cols; j++) {
-            cell *c = &sheet->table[i][j];
-            free((char *)c->formula); 
-            free(c->parents);
-            free(c->children);
-        }
-        free(sheet->table[i]);
-    }
-    free(sheet->table);
-    if (sheet->bounds) {
-        free(sheet->bounds->first_row);
-        free(sheet->bounds->first_col);
-        free(sheet->bounds->last_row);
-        free(sheet->bounds->last_col);
-        free(sheet->bounds);
-    }
-    free(sheet);
 }

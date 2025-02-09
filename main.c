@@ -34,6 +34,6 @@ int main(int argc, char *argv[]){
         }
         parse_command(sheet, command);
     }
-    free_spreadsheet(sheet);
+    // free_spreadsheet(sheet);
     return 0;
 }

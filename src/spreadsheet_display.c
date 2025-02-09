@@ -5,6 +5,7 @@
 #include "string.h"
 
 
+
 void display_spreadsheet(spreadsheet *sheet){ 
 /*
     Function to display the spreadsheet
@@ -27,10 +28,10 @@ void display_spreadsheet(spreadsheet *sheet){
     }
 }
 
-void display_status(const char *status, int time) {
+void display_status(const char *status,  double time) {
 /*
     Function to display the status of the command
     - prints the status of the command and the time taken to execute the command
 */
-    printf("[%.1f] (%s) > ", (float)time , status);
+    printf("[%.1f] (%s) > ", time , status);
 }

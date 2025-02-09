@@ -2,15 +2,20 @@
 #define SPREADSHEET_H
 #include "stdio.h"
 
+typedef struct {
+    int* data;
+    size_t size;
+    size_t capacity;
+} IntArray;
+
 // Single Cell Structure in the Spreadsheet
 typedef struct{
     int val;               // Value of the cell
     const char *formula;         // Formula or dependent value of the cell
     int vis;        // will be using for recalculating the cell
-    int *parents;          // Array of parent cell hashes
-    int *children;         // Array of child cell hashes
-    int num_parents;       // Number of parent cells
-    int num_children;      // Number of child cells
+    IntArray parents; // Array of parent cell hash values
+    IntArray children; // Array of children cell hash values
+    char valid;
 }cell;
 
 // Spreadsheet Bounds Structure
@@ -37,12 +42,13 @@ typedef struct Stack {
 
 spreadsheet *create_spreadsheet(int rows, int cols); // Create a new spreadsheet
 void free_spreadsheet(spreadsheet *sheet); // Free the memory allocated for the spreadsheet
-void set_cell(spreadsheet *sheet, int row, int col, const char *val); // Set the value of a cell
 void evaluate_cell(spreadsheet *sheet, int row, int col); // Evaluate the value of a cell
 Stack* createStack(int capacity);
 int isEmpty(Stack* stack);
 void resizeStack(Stack* stack);
 void push(Stack* stack, int item);
 int pop(Stack* stack);
+void init_int_array(IntArray* arr, size_t initial);
+void add_element(IntArray* arr, int value);
 
 #endif

@@ -365,27 +365,24 @@ void add_child(cell *c, int child_hash) {
         - c : cell pointer
         - child_hash : integer value of child hash to store
     */
-    if(c->children == NULL){
-        c->children = malloc(sizeof(int));
-        if (c->children == NULL) {
-            fprintf(stderr, "Memory allocation failed in add_parent\n");
-            return;
-        }
-        c->num_children = 0;
+    int left = 0, right = c->children.size - 1;
+    while(left <= right) {
+        int mid = left + (right - left)/2;
+        if(c->children.data[mid] == child_hash) return;
+        if(c->children.data[mid] < child_hash) left = mid + 1;
+        else right = mid - 1;
     }
-    for(int i = 0 ; i < c->num_children ; i++){
-        if(c->children[i] == child_hash){
-            return;
-        }
+    if(c->children.size >= c->children.capacity) {
+        c->children.capacity = c->children.capacity ? c->children.capacity * 2 : 4;
+        c->children.data = (int *)realloc(c->children.data, c->children.capacity * sizeof(int));
     }
-    int *new_children = realloc(c->children, (c->num_children + 1) * sizeof(int));
-    if (new_children == NULL) {
-        fprintf(stderr, "Memory allocation failed in add_parent\n");
-        return;
+    for(int i = c->children.size; i > left; i--) {
+        c->children.data[i] = c->children.data[i-1];
     }
-    c->children = new_children;
-    c->children[c->num_children] = child_hash;
-    c->num_children++;
+    c->children.data[left] = child_hash;
+    c->children.size++;
+    // printf("Added child\n");
+    // printf("Size of children %d\n", c->children.size);
 }
 
 void add_parent(cell *c, int parent_hash) {
@@ -395,24 +392,24 @@ void add_parent(cell *c, int parent_hash) {
         - c : cell pointer
         - parent_hash : integer value of parent hash to store
     */
-    if (c->parents == NULL) {
-        c->parents = malloc(sizeof(int));
-        if (c->parents == NULL) {
-            fprintf(stderr, "Memory allocation failed in add_parent\n");
-            return;
-        }
-        c->num_parents = 0;
+    int left = 0, right = c->parents.size - 1;
+    while(left <= right) {
+        int mid = left + (right - left)/2;
+        if(c->parents.data[mid] == parent_hash) return;
+        if(c->parents.data[mid] < parent_hash) left = mid + 1;
+        else right = mid - 1;
     }
-
-    int *new_parents = realloc(c->parents, (c->num_parents + 1) * sizeof(int));
-    if (new_parents == NULL) {
-        fprintf(stderr, "Memory allocation failed in add_parent\n");
-        return;
+    if(c->parents.size >= c->parents.capacity) {
+        c->parents.capacity = c->parents.capacity ? c->parents.capacity * 2 : 4;
+        c->parents.data = (int *)realloc(c->parents.data, c->parents.capacity * sizeof(int));
     }
-
-    c->parents = new_parents;
-    c->parents[c->num_parents] = parent_hash;
-    c->num_parents++;
+    for(int i = c->parents.size; i > left; i--) {
+        c->parents.data[i] = c->parents.data[i-1];
+    }
+    c->parents.data[left] = parent_hash;
+    c->parents.size++;
+    // printf("Added parent\n");
+    // printf("Size of parents %d\n", c->parents.size);
 }
 
 int hash_index(spreadsheet *sheet , int row, int col) {
@@ -443,20 +440,26 @@ int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
         0 : If there is no cycle
         1 : If there is a presence of cycle
     */
-    if(c->num_children == 0){
-        return 0;
+    Stack *stk = createStack(16);
+    int found = 0;
+    for(int i = 0; i < c->children.size; i++){
+        push(stk , c->children.data[i]);
     }
-    for(int i = 0; i < c->num_children; i++){
-        if(c->children[i] == *(target_cell_hash)){
-            return 1;
+    while(!isEmpty(stk)){
+        int current_cell_hash = pop(stk);
+        int col = current_cell_hash % sheet->cols;
+        int row = current_cell_hash / sheet->cols;
+        if(current_cell_hash == *target_cell_hash){
+            found = 1;
+            break;
         }
-        int colm = c->children[i] % sheet->cols;
-        int row = c->children[i] / sheet->cols;
-        if(check_cycle(sheet , &sheet->table[row][colm], target_cell_hash)){
-            return 1;
+        for(int i = 0; i < sheet->table[row][col].children.size; i++){
+            push(stk , sheet->table[row][col].children.data[i]);
         }
     }
-    return 0;
+    free(stk->array);
+    free(stk);
+    return found;
 }
 
 void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col){
@@ -469,24 +472,47 @@ void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col
         - col : pointer to the col index
     */
     int current_cell_hash = hash_index(sheet , *row , *col);
-    for(int i = 0; i < c->num_parents; i++){
-        int colm = c->parents[i] % sheet->cols;
-        int prow = c->parents[i] / sheet->cols;
-        cell *parent = &sheet->table[prow][colm];
-        for(int j = 0; j < parent->num_children; j++){
-            if(parent->children[j] == current_cell_hash){
-                for(int k = j; k < parent->num_children - 1; k++){
-                    parent->children[k] = parent->children[k + 1];
-                }
-                parent->num_children--;
-                parent->children = (int *)realloc(parent->children, parent->num_children * sizeof(int));
+    // printf("Deleting parent connections\n");
+    for(size_t i = 0; i < c->parents.size; i++){
+        // printf("I am in loop\n");
+
+        int parent_hash = c->parents.data[i];
+        int prow = parent_hash / sheet->cols;
+        int pcol = parent_hash % sheet->cols;
+        cell *parent = &sheet->table[prow][pcol];
+        int left = 0, right = parent->children.size - 1;
+        int index = -1;
+        while(left <= right){
+            int mid = left + (right-left)/2;
+            if(parent->children.data[mid] == current_cell_hash){
+                index = mid;
                 break;
             }
+            if(parent->children.data[mid] < current_cell_hash){
+                left = mid + 1;
+            }
+            else{
+                right = mid - 1;
+            }
+        }
+        if(index == -1){
+            printf("Error in deleting parent connections\n");
+            return;
+        }
+        for(int j = index; j < parent->children.size - 1; j++){
+            parent->children.data[j] = parent->children.data[j+1];
+        }
+        parent->children.size--;
+
+        if(parent->children.size <= parent->children.capacity/4 && parent->children.capacity > 4){
+            parent->children.capacity /= 2;
+            parent->children.data = realloc(parent->children.data , parent->children.capacity * sizeof(int));
         }
     }
-    free(c->parents);
-    c->num_parents = 0;
-    c->parents = NULL;
+    free(c->parents.data);
+    c->parents.data = NULL;
+    c->parents.size = c->parents.capacity = 0;
+    // printf("Deleted parent connections\n");
 }
 
 void dfs(spreadsheet *sheet , int row , int col , Stack *stk){
@@ -494,9 +520,9 @@ void dfs(spreadsheet *sheet , int row , int col , Stack *stk){
         This performs dfs if visit value of cell is 0
     */
     sheet->table[row][col].vis = 1;
-    for(int i = 0; i < sheet->table[row][col].num_children; i++){
-        int c_col = sheet->table[row][col].children[i] % sheet->cols;
-        int c_row = sheet->table[row][col].children[i] / sheet->cols;
+    for(int i = 0; i < sheet->table[row][col].children.size; i++){
+        int c_col = sheet->table[row][col].children.data[i] % sheet->cols;
+        int c_row = sheet->table[row][col].children.data[i] / sheet->cols;
         if(!sheet->table[c_row][c_col].vis){
             dfs(sheet , c_row , c_col , stk);
         }
@@ -509,9 +535,9 @@ void dfs2(spreadsheet *sheet , int row , int col){
         This performs dfs if visit value of cell is 1
     */
     sheet->table[row][col].vis = 0;
-    for(int i = 0; i < sheet->table[row][col].num_children; i++){
-        int c_col = sheet->table[row][col].children[i] % sheet->cols;
-        int c_row = sheet->table[row][col].children[i] / sheet->cols;
+    for(int i = 0; i < sheet->table[row][col].children.size; i++){
+        int c_col = sheet->table[row][col].children.data[i] % sheet->cols;
+        int c_row = sheet->table[row][col].children.data[i] / sheet->cols;
         if(sheet->table[c_row][c_col].vis){
             dfs2(sheet , c_row , c_col);
         }

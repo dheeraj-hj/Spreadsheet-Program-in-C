@@ -2,7 +2,8 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Wall -Wextra -std=c11 -g -D_GNU_SOURCE		
+# CFLAGS = -Wall -Wextra -std=c11 -g -D_GNU_SOURCE	
+CFLAGS = -g	
 
 # Source files
 SRC = main.c src/spreadsheet.c src/utils.c src/command_handler.c src/spreadsheet_display.c
