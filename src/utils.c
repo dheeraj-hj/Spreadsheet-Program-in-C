@@ -519,31 +519,47 @@ void dfs(spreadsheet *sheet , int row , int col , Stack *stk){
     /*
         This performs dfs if visit value of cell is 0
     */
-    sheet->table[row][col].vis = 1;
-    for(int i = 0; i < sheet->table[row][col].children.size; i++){
-        int c_col = sheet->table[row][col].children.data[i] % sheet->cols;
-        int c_row = sheet->table[row][col].children.data[i] / sheet->cols;
-        // printf("Child row in dfs %d col %d and vis is %d\n", c_row , c_col , sheet->table[c_row][c_col].vis);
-        if(!sheet->table[c_row][c_col].vis){
-            dfs(sheet , c_row , c_col , stk);
+    // sheet->table[row][col].vis = 1;
+    // for(int i = 0; i < sheet->table[row][col].children.size; i++){
+    //     int c_col = sheet->table[row][col].children.data[i] % sheet->cols;
+    //     int c_row = sheet->table[row][col].children.data[i] / sheet->cols;
+    //     // printf("Child row in dfs %d col %d and vis is %d\n", c_row , c_col , sheet->table[c_row][c_col].vis);
+    //     if(!sheet->table[c_row][c_col].vis){
+    //         dfs(sheet , c_row , c_col , stk);
+    //     }
+    // }
+    // push(stk , hash_index(sheet , row , col));
+    Stack *traversal_stack = createStack(16);
+    int current_hash = row * sheet->cols + col;
+    push(traversal_stack, (current_hash << 1) | 0);  // Encode unprocessed state
+
+    while (!isEmpty(traversal_stack)) {
+        int encoded = pop(traversal_stack);
+        int processed = encoded & 1;
+        current_hash = encoded >> 1;
+        int current_row = current_hash / sheet->cols;
+        int current_col = current_hash % sheet->cols;
+        if (processed) {
+            push(stk, current_hash); 
+            continue;
+        }
+        if (sheet->table[current_row][current_col].vis) continue;
+        sheet->table[current_row][current_col].vis = 1;
+        push(traversal_stack, (current_hash << 1) | 1);
+        for (int i = sheet->table[current_row][current_col].children.size - 1; i >= 0; i--) {
+            int child_hash = sheet->table[current_row][current_col].children.data[i];
+            int child_row = child_hash / sheet->cols;
+            int child_col = child_hash % sheet->cols;
+            
+            if (!sheet->table[child_row][child_col].vis) {
+                push(traversal_stack, (child_hash << 1) | 0);
+            }
         }
     }
-    push(stk , hash_index(sheet , row , col));
+    free(traversal_stack->array);
+    free(traversal_stack);
 }
 
-void dfs2(spreadsheet *sheet , int row , int col){
-     /*
-        This performs dfs if visit value of cell is 1
-    */
-    sheet->table[row][col].vis = 0;
-    for(int i = 0; i < sheet->table[row][col].children.size; i++){
-        int c_col = sheet->table[row][col].children.data[i] % sheet->cols;
-        int c_row = sheet->table[row][col].children.data[i] / sheet->cols;
-        if(sheet->table[c_row][c_col].vis){
-            dfs2(sheet , c_row , c_col);
-        }
-    }
-}
 
 void recalculate_dependent_cells(spreadsheet *sheet , int *row ,int *col){
     /*

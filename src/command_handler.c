@@ -612,8 +612,8 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr ,i
         }
     }
     delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
-    float sum = 0;
-    float cnt = 0;
+    int sum = 0;
+    int cnt = 0;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if(sheet->table[i][j].error == '1'){
@@ -627,8 +627,7 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr ,i
             add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
         }
     }
-    float favg = sum/cnt;
-    int avg = round(favg);
+    int avg = sum/cnt;
     sheet->table[*row][*col].val = avg;
     sheet->table[*row][*col].formula = expr_to_store;
     recalculate_dependent_cells(sheet , row , col);
@@ -676,8 +675,8 @@ void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr 
         }
     }
     delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
-    float sum = 0;
-    float cnt = 0;
+    int sum = 0;
+    int cnt = 0;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if(sheet->table[i][j].error == '1'){
@@ -691,15 +690,15 @@ void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr 
             add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
         }
     }
-    float mean = sum/cnt;
-    float values = 0.0;
+    int mean = sum/cnt;
+    double variance = 0.0;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
-            values += pow(sheet->table[i][j].val - mean , 2);
+            variance += (sheet->table[i][j].val - mean) * (sheet->table[i][j].val - mean);
         }
     }
-    float stddev = sqrt(values/cnt);
-    int sd = round(stddev);
+    variance /= cnt;
+    int sd = (int)round(sqrt(variance));
     sheet->table[*row][*col].val = sd;
     sheet->table[*row][*col].formula = expr_to_store;
     recalculate_dependent_cells(sheet , row , col);

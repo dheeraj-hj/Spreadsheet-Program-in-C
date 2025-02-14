@@ -101,8 +101,8 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
     else if(strncmp(formula , "AVG(" , 4) == 0){
         int row1, col1, row2, col2;
         range_to_indices(formula + 4, &row1, &col1, &row2, &col2);
-        float sum = 0;
-        float cnt = 0;
+        int sum = 0;
+        int cnt = 0;
         for(int i = row1; i <= row2; i++){
             for(int j = col1; j <= col2; j++){
                 if(sheet->table[i][j].error == '1'){
@@ -113,8 +113,7 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
                 cnt++;
             }
         }
-        float favg = sum/cnt;
-        int avg = round(favg);
+        int avg = sum/cnt;
         sheet->table[row][col].val = avg;
     }
     else if(strncmp(formula , "SUM(" , 4) == 0){
@@ -135,8 +134,8 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
     else if(strncmp(formula , "STDEV(" , 6) == 0){
         int row1, col1, row2, col2;
         range_to_indices(formula + 6, &row1, &col1, &row2, &col2);
-        float sum = 0;
-        float cnt = 0;
+        int sum = 0;
+        int cnt = 0;
         for(int i = row1; i <= row2; i++){
             for(int j = col1; j <= col2; j++){
                 if(sheet->table[i][j].error == '1'){
@@ -147,15 +146,15 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
                 cnt++;
             }
         }
-        float mean = sum/cnt;
-        float values = 0.0;
+        int mean = sum/cnt;
+        double variance = 0.0;
         for(int i = row1; i <= row2; i++){
             for(int j = col1; j <= col2; j++){
-                values += pow(sheet->table[i][j].val - mean , 2);
+                variance += (sheet->table[i][j].val - mean)*(sheet->table[i][j].val - mean);
             }
         }
-        float stddev = sqrt(values/cnt);
-        int sd = round(stddev);
+        variance /= cnt;
+        int sd = (int)round(sqrt(variance));
         sheet->table[row][col].val = sd;
     }
     else if(strncmp(formula , "SLEEP(" , 6) == 0){
