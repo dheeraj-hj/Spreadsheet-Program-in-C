@@ -27,15 +27,12 @@ void parse_command(spreadsheet* sheet, const char *command){
     char *targetcell;
     char *expression;
     int error_code = 0;
-    // time_t start_time = time(NULL);
-    clock_gettime(CLOCK_MONOTONIC, &start_time); // Start time
+    clock_gettime(CLOCK_MONOTONIC, &start_time);
     validate_command(sheet ,command , &error_code);
-    // time_t end_time = time(NULL);
-    clock_gettime(CLOCK_MONOTONIC, &end_time);   // End time
-    // float t = (float)(end_time - start_time);
+    clock_gettime(CLOCK_MONOTONIC, &end_time); 
 
-double t = (end_time.tv_sec - start_time.tv_sec) +
-                          (end_time.tv_nsec - start_time.tv_nsec) / 1.0e9;    if(error_code != 0){
+    double t = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_nsec - start_time.tv_nsec) / 1.0e9;    
+    if(error_code != 0){
         if(display == 2){
             display_spreadsheet(sheet);
         }
@@ -191,6 +188,7 @@ void number_assign(spreadsheet* sheet, int *row , int *col, const char *_expr){
     sheet->table[*row][*col].val = atoi(_expr);
     sheet->table[*row][*col].vis = 0;
     sheet->table[*row][*col].formula = NULL;
+    sheet->table[*row][*col].error = '0';
     recalculate_dependent_cells(sheet , row , col);
 }
 
@@ -225,6 +223,11 @@ void value_assign(spreadsheet* sheet, int *row , int *col, const char *_expr , i
     delete_parent_connections(sheet , &sheet->table[*row][*col] , row , col);
     add_child(&sheet->table[dependent_row][dependent_col] , current_cell_hash);
     add_parent(&sheet->table[*row][*col] , dependent_cell_hash);
+    if(sheet->table[dependent_row][dependent_col].error == '1'){
+        sheet->table[*row][*col].error = '1';
+    }else{
+        sheet->table[*row][*col].error = '0';
+    }
     sheet->table[*row][*col].val = sheet->table[dependent_row][dependent_col].val;
     sheet->table[*row][*col].vis = 0;
     sheet->table[*row][*col].formula = expr_to_store;
@@ -309,21 +312,26 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
             return;
         }
     }
-    // printf("Entering delete parent connections\n");
     delete_parent_connections(sheet , &sheet->table[*row][*col] , row , col);
 
     if(left_row != -1){
+        if(sheet->table[left_row][left_col].error == '1'){
+            sheet->table[*row][*col].error = '1';
+        }else{
+            sheet->table[*row][*col].error = '0';
+        }
         left_val = sheet->table[left_row][left_col].val * left_mul;
-        // printf("Adding left child\n");
         add_child(&sheet->table[left_row][left_col] , current_cell_hash);
-        // printf("Adding left parent\n");
         add_parent(&sheet->table[*row][*col] , left_cell_hash);
     }
     if(right_row != -1){
+        if(sheet->table[right_row][right_col].error == '1'){
+            sheet->table[*row][*col].error = '1';
+        }else{
+            sheet->table[*row][*col].error = '0';
+        }
         right_val = sheet->table[right_row][right_col].val * right_mul;
-        // printf("Adding right child\n");
         add_child(&sheet->table[right_row][right_col] , current_cell_hash);
-        // printf("Adding right parent\n");
         add_parent(&sheet->table[*row][*col] , right_cell_hash);
     }
     switch (operation){
@@ -337,11 +345,11 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
             sheet->table[*row][*col].val = left_val * right_val;
             break;
         case '/':
-            // if(right_val == 0){
-            //     *error_code = 5; // Division by zero
-            //     return;
-            // }
-            sheet->table[*row][*col].val = left_val / right_val;
+            if(right_val == 0){
+                sheet->table[*row][*col].error = '1';
+            }else{
+                sheet->table[*row][*col].val = left_val / right_val;
+            }
             break;
         default:
             break;
@@ -380,7 +388,7 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
     name_to_indices(first_cell, &row1, &col1);
     name_to_indices(last_cell, &row2, &col2);
     struct timespec start_time, end_time;
-    clock_gettime(CLOCK_MONOTONIC, &start_time); // Start time
+    // clock_gettime(CLOCK_MONOTONIC, &start_time); // Start time
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if (i == *row && j == *col) {
@@ -397,44 +405,49 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
             }
         }
     }
-    clock_gettime(CLOCK_MONOTONIC, &end_time);   // End time
-    double elapsed_time = (end_time.tv_sec - start_time.tv_sec) +
-                          (end_time.tv_nsec - start_time.tv_nsec) / 1.0e9;
-    printf("Time spent in first loop: %.1f seconds\n", elapsed_time);
+    // clock_gettime(CLOCK_MONOTONIC, &end_time);   // End time
+    // double elapsed_time = (end_time.tv_sec - start_time.tv_sec) +
+    //                       (end_time.tv_nsec - start_time.tv_nsec) / 1.0e9;
+    // printf("Time spent in first loop: %.1f seconds\n", elapsed_time);
 
-    struct timespec start_time1, end_time1;
-    clock_gettime(CLOCK_MONOTONIC, &start_time1); // Start time
+    // struct timespec start_time1, end_time1;
+    // clock_gettime(CLOCK_MONOTONIC, &start_time1); // Start time
     delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
-    clock_gettime(CLOCK_MONOTONIC, &end_time1);   // End time
-    double elapsed_time1 = (end_time1.tv_sec - start_time1.tv_sec) +
-                          (end_time1.tv_nsec - start_time1.tv_nsec) / 1.0e9;
-    printf("Time spent in delete parent connections: %.1f seconds\n", elapsed_time1);
+    // clock_gettime(CLOCK_MONOTONIC, &end_time1);   // End time
+    // double elapsed_time1 = (end_time1.tv_sec - start_time1.tv_sec) +
+    //                       (end_time1.tv_nsec - start_time1.tv_nsec) / 1.0e9;
+    // printf("Time spent in delete parent connections: %.1f seconds\n", elapsed_time1);
 
-    struct timespec start_time2, end_time2;
-    clock_gettime(CLOCK_MONOTONIC, &start_time2); // Start time
+    // struct timespec start_time2, end_time2;
+    // clock_gettime(CLOCK_MONOTONIC, &start_time2); // Start time
     int min_val = INT_MAX;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
+            if(sheet->table[i][j].error == '1'){
+                sheet->table[*row][*col].error = '1';
+            }else{
+                sheet->table[*row][*col].error = '0';
+            }
             min_val = MIN(min_val, sheet->table[i][j].val);
             add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
             add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
         }
     }
-    clock_gettime(CLOCK_MONOTONIC, &end_time2);   // End time
-    double elapsed_time2 = (end_time2.tv_sec - start_time2.tv_sec) +
-                          (end_time2.tv_nsec - start_time2.tv_nsec) / 1.0e9;
-    printf("Time spent in second loop: %.1f seconds\n", elapsed_time2);
+    // clock_gettime(CLOCK_MONOTONIC, &end_time2);   // End time
+    // double elapsed_time2 = (end_time2.tv_sec - start_time2.tv_sec) +
+    //                       (end_time2.tv_nsec - start_time2.tv_nsec) / 1.0e9;
+    // printf("Time spent in second loop: %.1f seconds\n", elapsed_time2);
     sheet->table[*row][*col].val = min_val;
     sheet->table[*row][*col].formula = expr_to_store;
-    struct timespec start_time3, end_time3;
-    clock_gettime(CLOCK_MONOTONIC, &start_time3); // Start time
+    // struct timespec start_time3, end_time3;
+    // clock_gettime(CLOCK_MONOTONIC, &start_time3); // Start time
 
     recalculate_dependent_cells(sheet , row , col);
 
-    clock_gettime(CLOCK_MONOTONIC, &end_time3);   // End time
-    double elapsed_time3 = (end_time3.tv_sec - start_time3.tv_sec) +
-                          (end_time3.tv_nsec - start_time3.tv_nsec) / 1.0e9;
-    printf("Time spent in recalculate dependent cells: %.1f seconds\n", elapsed_time3);
+    // clock_gettime(CLOCK_MONOTONIC, &end_time3);   // End time
+    // double elapsed_time3 = (end_time3.tv_sec - start_time3.tv_sec) +
+    //                       (end_time3.tv_nsec - start_time3.tv_nsec) / 1.0e9;
+    // printf("Time spent in recalculate dependent cells: %.1f seconds\n", elapsed_time3);
     free(exprdup);
 }
 
@@ -482,6 +495,11 @@ void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr , 
     int max_val = INT_MIN;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
+            if(sheet->table[i][j].error == '1'){
+                sheet->table[*row][*col].error = '1';
+            }else{
+                sheet->table[*row][*col].error = '0';
+            }
             max_val = MAX(max_val, sheet->table[i][j].val);
             add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
             add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
@@ -537,6 +555,11 @@ void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr ,
     int sum = 0;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
+            if(sheet->table[i][j].error == '1'){
+                sheet->table[*row][*col].error = '1';
+            }else{
+                sheet->table[*row][*col].error = '0';
+            }
             sum = sum + sheet->table[i][j].val;
             add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
             add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
@@ -593,6 +616,11 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr ,i
     float cnt = 0;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
+            if(sheet->table[i][j].error == '1'){
+                sheet->table[*row][*col].error = '1';
+            }else{
+                sheet->table[*row][*col].error = '0';
+            }
             sum = sum + sheet->table[i][j].val;
             cnt++;
             add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
@@ -652,6 +680,11 @@ void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr 
     float cnt = 0;
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
+            if(sheet->table[i][j].error == '1'){
+                sheet->table[*row][*col].error = '1';
+            }else{
+                sheet->table[*row][*col].error = '0';
+            }
             sum = sum + sheet->table[i][j].val;
             cnt++;
             add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
@@ -715,13 +748,20 @@ void sleep_handling(spreadsheet* sheet,int *row , int *col,const char *_expr , i
         delete_parent_connections(sheet , &sheet->table[*row][*col] , row , col);
         add_child(&sheet->table[dependent_row][dependent_col] , current_cell_hash);
         add_parent(&sheet->table[*row][*col] , dependent_cell_hash);
+        if(sheet->table[dependent_row][dependent_col].error == '1'){
+            sheet->table[*row][*col].error = '1';
+        }else{
+            sheet->table[*row][*col].error = '0';
+        }
         delay_time = sheet->table[dependent_row][dependent_col].val;
     }
     sheet->table[*row][*col].val = delay_time;
     sheet->table[*row][*col].vis = 0;
     sheet->table[*row][*col].formula = expr_to_store;
-    if(delay_time > 0){
-        sleep(delay_time);
+    if(sheet->table[*row][*col].error == '0'){
+        if(delay_time > 0){
+            sleep(delay_time);
+        }
     }
     recalculate_dependent_cells(sheet , row , col);
     free(exprdup);

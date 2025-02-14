@@ -523,6 +523,7 @@ void dfs(spreadsheet *sheet , int row , int col , Stack *stk){
     for(int i = 0; i < sheet->table[row][col].children.size; i++){
         int c_col = sheet->table[row][col].children.data[i] % sheet->cols;
         int c_row = sheet->table[row][col].children.data[i] / sheet->cols;
+        // printf("Child row in dfs %d col %d and vis is %d\n", c_row , c_col , sheet->table[c_row][c_col].vis);
         if(!sheet->table[c_row][c_col].vis){
             dfs(sheet , c_row , c_col , stk);
         }
@@ -555,11 +556,14 @@ void recalculate_dependent_cells(spreadsheet *sheet , int *row ,int *col){
     Stack *stk = createStack(INIT_SIZE);   
     dfs(sheet , *row , *col , stk);
     pop(stk);
+    sheet->table[*row][*col].vis = 0;
     while(!isEmpty(stk)){
         int cell_hash = pop(stk);
+        // printf("Cell hash %d\n", cell_hash);
         int _col = cell_hash % sheet->cols;
         int _row = cell_hash / sheet->cols;
+
         evaluate_cell(sheet , _row , _col);
     } 
-    dfs2(sheet , *row , *col);
+    // dfs2(sheet , *row , *col);
 }

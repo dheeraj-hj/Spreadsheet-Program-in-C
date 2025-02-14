@@ -19,11 +19,11 @@ all: $(TARGET)
 
 # Compile the executable
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lm
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) -lm -O3
 
 # Compile each C file into an object file
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ -O3
 
 # Run test cases
 test: $(TARGET)

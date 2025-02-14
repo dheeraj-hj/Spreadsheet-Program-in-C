@@ -5,11 +5,14 @@
 #include "string.h"
 #include "math.h"
 #include "unistd.h"
+#include "time.h"
 #include "spreadsheet_display.h"
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 
 spreadsheet *create_spreadsheet(int rows, int cols){
+    struct timespec start_time, end_time;
+    clock_gettime(CLOCK_MONOTONIC, &start_time); // Start time
     spreadsheet *s = (spreadsheet *)malloc(sizeof(spreadsheet));
     s->rows = rows;
     s->cols = cols;
@@ -21,12 +24,13 @@ spreadsheet *create_spreadsheet(int rows, int cols){
             s->table[i][j].val = 0;
             s->table[i][j].vis = 0;
             s->table[i][j].formula = NULL;
-            s->table[i][j].children.data = malloc(4 * sizeof(int));
+            s->table[i][j].children.data = NULL;
             s->table[i][j].children.size = 0;
-            s->table[i][j].children.capacity = 4;
-            s->table[i][j].parents.data = malloc(4 * sizeof(int));
+            s->table[i][j].children.capacity = 0;
+            s->table[i][j].parents.data = NULL;
             s->table[i][j].parents.size = 0;
-            s->table[i][j].parents.capacity = 4;
+            s->table[i][j].parents.capacity = 0;
+            s->table[i][j].error = '0';
     //         arr->data = malloc(initial * sizeof(int));
     // arr->size = 0;
     // arr->capacity = initial;
@@ -40,8 +44,11 @@ spreadsheet *create_spreadsheet(int rows, int cols){
     *(s->bounds->first_col)=1;
     *(s->bounds->last_row)=MIN(rows,10);
     *(s->bounds->last_col)=MIN(cols,10);
+    clock_gettime(CLOCK_MONOTONIC, &end_time);   // End time
+    double elapsed_time = (end_time.tv_sec - start_time.tv_sec) +
+                          (end_time.tv_nsec - start_time.tv_nsec) / 1.0e9;
     display_spreadsheet(s);
-    display_status("OK",0);
+    display_status("OK", elapsed_time);
     return s;
 }
 
@@ -53,6 +60,10 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         - row : integer row index
         - col : integer col index
     */
+//    printf("Evaluating cell %d , %d\n" , row , col );
+    sheet->table[row][col].vis = 0;
+
+   int r1 , c1;
     if(sheet->table[row][col].formula == NULL){
         return;
     }
@@ -63,6 +74,10 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         int min_val = sheet->table[row1][col1].val;
         for(int i = row1; i <= row2; i++){
             for(int j = col1; j <= col2; j++){
+                if(sheet->table[i][j].error == '1'){
+                    sheet->table[row][col].error = '1';
+                    return;
+                }
                 min_val = MIN(min_val, sheet->table[i][j].val);
             }
         }
@@ -74,6 +89,10 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         int max_val = sheet->table[row1][col1].val;
         for(int i = row1; i <= row2; i++){
             for(int j = col1; j <= col2; j++){
+                if(sheet->table[i][j].error == '1'){
+                    sheet->table[row][col].error = '1';
+                    return;
+                }
                 max_val = MAX(max_val, sheet->table[i][j].val);
             }
         }
@@ -86,6 +105,10 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         float cnt = 0;
         for(int i = row1; i <= row2; i++){
             for(int j = col1; j <= col2; j++){
+                if(sheet->table[i][j].error == '1'){
+                    sheet->table[row][col].error = '1';
+                    return;
+                }
                 sum = sum + sheet->table[i][j].val;
                 cnt++;
             }
@@ -100,6 +123,10 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         int sum = 0;
         for(int i = row1; i <= row2; i++){
             for(int j = col1; j <= col2; j++){
+                if(sheet->table[i][j].error == '1'){
+                    sheet->table[row][col].error = '1';
+                    return;
+                }
                 sum = sum + sheet->table[i][j].val;
             }
         }
@@ -112,6 +139,10 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         float cnt = 0;
         for(int i = row1; i <= row2; i++){
             for(int j = col1; j <= col2; j++){
+                if(sheet->table[i][j].error == '1'){
+                    sheet->table[row][col].error = '1';
+                    return;
+                }
                 sum = sum + sheet->table[i][j].val;
                 cnt++;
             }
@@ -139,12 +170,23 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
             int cell_row;
             int cell_col;
             name_to_indices(cell , &cell_row , &cell_col);
+            if(sheet->table[cell_row][cell_col].error == '1'){
+                sheet->table[row][col].error = '1';
+                return;
+            }
             delay_time = sheet->table[cell_row][cell_col].val;
         }
         sheet->table[row][col].val = delay_time;
         if(delay_time > 0){
             sleep(delay_time);
         }
+    }
+    else if(valid_cell(sheet , formula , &r1 , &c1)){
+        if(sheet->table[r1][c1].error == '1'){
+            sheet->table[row][col].error = '1';
+            return;
+        }
+        sheet->table[row][col].val = sheet->table[r1][c1].val;
     }
     else{
         int left_val;
@@ -175,6 +217,10 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
                 left++;
             }
             name_to_indices(left , &left_row , &left_col);
+            if(sheet->table[left_row][left_col].error == '1'){
+                sheet->table[row][col].error = '1';
+                return;
+            }
             left_val = sheet->table[left_row][left_col].val * leftmul;
         }
         if(is_number(right)){
@@ -189,6 +235,10 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
                 right++;
             }
             name_to_indices(right , &right_row , &right_col);
+            if(sheet->table[right_row][right_col].error == '1'){
+                sheet->table[row][col].error = '1';
+                return;
+            }
             right_val = sheet->table[right_row][right_col].val * rightmul;
         }
         switch(operation){
@@ -203,12 +253,18 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
                 break;
             case '/':
                 // Divison by zero yet to be considered
-                sheet->table[row][col].val = left_val / right_val;
+                if(right_val == 0){
+                    sheet->table[row][col].error = '1';
+                    return;
+                }else{
+                    sheet->table[row][col].val = left_val / right_val;
+                }
                 break;
             default:
                 break;
         }
     }
+    sheet->table[row][col].error = '0';
     
 }
 void init_int_array(IntArray* arr, size_t initial) {

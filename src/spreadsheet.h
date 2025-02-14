@@ -15,7 +15,7 @@ typedef struct{
     int vis;        // will be using for recalculating the cell
     IntArray parents; // Array of parent cell hash values
     IntArray children; // Array of children cell hash values
-    char valid;
+    char error;
 }cell;
 
 // Spreadsheet Bounds Structure
