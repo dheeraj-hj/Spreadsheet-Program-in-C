@@ -157,6 +157,7 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         int sd = (int)round(sqrt(variance));
         sheet->table[row][col].val = sd;
     }
+    
     else if(strncmp(formula , "SLEEP(" , 6) == 0){
         char *cell_end = strchr(formula , ')');
         char *cell = formula + 6;

@@ -2,7 +2,6 @@
 CC = gcc
 
 # Compiler flags
-# CFLAGS = -Wall -Wextra -std=c11 -g -D_GNU_SOURCE	
 CFLAGS = -g	
 
 # Source files
@@ -11,11 +10,18 @@ SRC = main.c src/spreadsheet.c src/utils.c src/command_handler.c src/spreadsheet
 # Object files
 OBJ = $(SRC:.c=.o)
 
+# Output directory
+BUILD_DIR = target/release
+
 # Executable name
-TARGET = sheet
+TARGET = $(BUILD_DIR)/spreadsheet
 
 # Default rule: Build the sheet executable
-all: $(TARGET)
+all: $(BUILD_DIR) $(TARGET)
+
+# Create build directory if it doesn't exist
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
 # Compile the executable
 $(TARGET): $(OBJ)

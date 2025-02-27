@@ -44,9 +44,9 @@ void parse_command(spreadsheet* sheet, const char *command){
         }
         display_status("ok" , t);
     }
-    if(display == 1){
-        display = 2;
-    }
+    // if(display == 1){
+    //     display = 2;
+    // }
 }
 
 void  error_message(int error_code , int time){
@@ -102,7 +102,7 @@ void validate_command(spreadsheet* sheet, const char *cmd , int *error_code){
         return;
     }
     if(strncmp(command , "enable_output" , 13) == 0){
-        display = 1;
+        display = 2;
         free(command);
         return;
     }
@@ -213,8 +213,8 @@ void value_assign(spreadsheet* sheet, int *row , int *col, const char *_expr , i
         free(expr);
         return;
     }
-    int dependent_cell_hash = hash_index(sheet , dependent_row , dependent_col);
-    int current_cell_hash = hash_index(sheet , *(row) , *(col));
+    int dependent_cell_hash = (dependent_row*sheet->cols) + dependent_col ;
+    int current_cell_hash =  ((*(row)) * sheet->cols) + (*(col));
     if(check_cycle(sheet , &sheet->table[*row][*col] , &dependent_cell_hash)){
         *error_code = 7; 
         free(expr);
@@ -265,7 +265,7 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
     int right_col;
     int left_cell_hash;
     int right_cell_hash;
-    int current_cell_hash = hash_index(sheet , *(row) , *(col));
+    int current_cell_hash = ((*(row)) * sheet->cols) + (*(col));
     if(is_number(left)){
         left_val = atoi(left);
     }else{
@@ -282,7 +282,7 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
             free(exprdup);
             return;
         }
-        left_cell_hash = hash_index(sheet , left_row , left_col);
+        left_cell_hash =  ((left_row) * sheet->cols) + (left_col);
         if(check_cycle(sheet , &sheet->table[*row][*col] , &left_cell_hash)){
            *error_code = 7; // Cycle Formation
             free(exprdup);
@@ -305,7 +305,7 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
             free(exprdup);
             return;
         }
-        right_cell_hash = hash_index(sheet , right_row , right_col);
+        right_cell_hash =  ((right_row) * sheet->cols) + (right_col);
         if(check_cycle(sheet , &sheet->table[*row][*col] , &right_cell_hash)){
             *error_code = 7; // Cycle Formation
             free(exprdup);
@@ -313,12 +313,10 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
         }
     }
     delete_parent_connections(sheet , &sheet->table[*row][*col] , row , col);
-
+    sheet->table[*row][*col].error = '0';
     if(left_row != -1){
         if(sheet->table[left_row][left_col].error == '1'){
             sheet->table[*row][*col].error = '1';
-        }else{
-            sheet->table[*row][*col].error = '0';
         }
         left_val = sheet->table[left_row][left_col].val * left_mul;
         add_child(&sheet->table[left_row][left_col] , current_cell_hash);
@@ -327,8 +325,6 @@ void operator_assign(spreadsheet* sheet, int *row , int *col, const char *_expr 
     if(right_row != -1){
         if(sheet->table[right_row][right_col].error == '1'){
             sheet->table[*row][*col].error = '1';
-        }else{
-            sheet->table[*row][*col].error = '0';
         }
         right_val = sheet->table[right_row][right_col].val * right_mul;
         add_child(&sheet->table[right_row][right_col] , current_cell_hash);
@@ -387,7 +383,7 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
     int row1, col1, row2, col2;
     name_to_indices(first_cell, &row1, &col1);
     name_to_indices(last_cell, &row2, &col2);
-    struct timespec start_time, end_time;
+    // struct timespec start_time, end_time;
     // clock_gettime(CLOCK_MONOTONIC, &start_time); // Start time
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
@@ -397,7 +393,7 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
                 return;
             }
 
-            int dependent_cell_hash = hash_index(sheet, i, j);
+            int dependent_cell_hash =  ((i) * sheet->cols) + (j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
                 *error_code = 7;  // Cycle Formation
                 free(exprdup);
@@ -421,16 +417,15 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
     // struct timespec start_time2, end_time2;
     // clock_gettime(CLOCK_MONOTONIC, &start_time2); // Start time
     int min_val = INT_MAX;
+    sheet->table[*row][*col].error = '0';
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if(sheet->table[i][j].error == '1'){
                 sheet->table[*row][*col].error = '1';
-            }else{
-                sheet->table[*row][*col].error = '0';
             }
             min_val = MIN(min_val, sheet->table[i][j].val);
-            add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
-            add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
+            add_child(&sheet->table[i][j],  ((*(row)) * sheet->cols) + (*(col)));
+            add_parent(&sheet->table[*row][*col],  ((i) * sheet->cols) + (j));
         }
     }
     // clock_gettime(CLOCK_MONOTONIC, &end_time2);   // End time
@@ -483,7 +478,7 @@ void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr , 
                 free(exprdup);
                 return;
             }
-            int dependent_cell_hash = hash_index(sheet, i, j);
+            int dependent_cell_hash =  ((i) * sheet->cols) + (j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
                 *error_code = 7;  // Cycle Formation
                 free(exprdup);
@@ -493,16 +488,15 @@ void max_handling(spreadsheet* sheet , int *row, int *col , const char *_expr , 
     }
     delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
     int max_val = INT_MIN;
+    sheet->table[*row][*col].error = '0';
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if(sheet->table[i][j].error == '1'){
                 sheet->table[*row][*col].error = '1';
-            }else{
-                sheet->table[*row][*col].error = '0';
             }
             max_val = MAX(max_val, sheet->table[i][j].val);
-            add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
-            add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
+            add_child(&sheet->table[i][j],  ((*(row)) * sheet->cols) + (*(col)));
+            add_parent(&sheet->table[*row][*col],  ((i) * sheet->cols) + (j));
         }
     }
     sheet->table[*row][*col].val = max_val;
@@ -543,7 +537,7 @@ void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr ,
                 free(exprdup);
                 return;
             }
-            int dependent_cell_hash = hash_index(sheet, i, j);
+            int dependent_cell_hash = ((i) * sheet->cols) + (j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
                 *error_code = 7;  // Cycle Formation
                 free(exprdup);
@@ -553,16 +547,15 @@ void sum_handling(spreadsheet* sheet , int *row , int *col , const char *_expr ,
     }
     delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
     int sum = 0;
+    sheet->table[*row][*col].error = '0';
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if(sheet->table[i][j].error == '1'){
                 sheet->table[*row][*col].error = '1';
-            }else{
-                sheet->table[*row][*col].error = '0';
             }
             sum = sum + sheet->table[i][j].val;
-            add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
-            add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
+            add_child(&sheet->table[i][j],  ((*(row)) * sheet->cols) + (*(col)));
+            add_parent(&sheet->table[*row][*col],  ((i) * sheet->cols) + (j));
         }
     }
     sheet->table[*row][*col].val = sum;
@@ -603,7 +596,7 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr ,i
                 free(exprdup);
                 return;
             }
-            int dependent_cell_hash = hash_index(sheet, i, j);
+            int dependent_cell_hash =  ((i) * sheet->cols) + (j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
                *error_code = 7;  // Cycle Formation
                 free(exprdup);
@@ -614,17 +607,16 @@ void avg_handling(spreadsheet* sheet , int *row, int *col , const char *_expr ,i
     delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
     int sum = 0;
     int cnt = 0;
+    sheet->table[*row][*col].error = '0';
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if(sheet->table[i][j].error == '1'){
                 sheet->table[*row][*col].error = '1';
-            }else{
-                sheet->table[*row][*col].error = '0';
             }
             sum = sum + sheet->table[i][j].val;
             cnt++;
-            add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
-            add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
+            add_child(&sheet->table[i][j],  ((*(row)) * sheet->cols) + (*(col)));
+            add_parent(&sheet->table[*row][*col],  ((i) * sheet->cols) + (j));
         }
     }
     int avg = sum/cnt;
@@ -666,7 +658,7 @@ void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr 
                 free(exprdup);
                 return;
             }
-            int dependent_cell_hash = hash_index(sheet, i, j);
+            int dependent_cell_hash = ((i) * sheet->cols) + (j);
             if (check_cycle(sheet, &sheet->table[*row][*col], &dependent_cell_hash)) {
                 *error_code = 7;  // Cycle Formation
                 free(exprdup);
@@ -677,17 +669,16 @@ void stdev_handling(spreadsheet *sheet, int *row , int *col , const char *_expr 
     delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
     int sum = 0;
     int cnt = 0;
+    sheet->table[*row][*col].error = '0';
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if(sheet->table[i][j].error == '1'){
                 sheet->table[*row][*col].error = '1';
-            }else{
-                sheet->table[*row][*col].error = '0';
             }
             sum = sum + sheet->table[i][j].val;
             cnt++;
-            add_child(&sheet->table[i][j], hash_index(sheet, *row, *col));
-            add_parent(&sheet->table[*row][*col], hash_index(sheet, i, j));
+            add_child(&sheet->table[i][j],  ((*(row)) * sheet->cols) + (*(col)));
+            add_parent(&sheet->table[*row][*col],  ((i) * sheet->cols) + (j));
         }
     }
     int mean = sum/cnt;
@@ -737,8 +728,8 @@ void sleep_handling(spreadsheet* sheet,int *row , int *col,const char *_expr , i
             free(exprdup);
             return;
         }
-        int dependent_cell_hash = hash_index(sheet , dependent_row , dependent_col);
-        int current_cell_hash = hash_index(sheet , *(row) , *(col));
+        int dependent_cell_hash =  ((dependent_row) * sheet->cols) + (dependent_col);
+        int current_cell_hash =  ((*(row)) * sheet->cols) + (*(col));
         if(check_cycle(sheet , &sheet->table[*row][*col] , &dependent_cell_hash)){
             *error_code = 7; // Cycle Formation
             free(exprdup);

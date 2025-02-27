@@ -440,7 +440,7 @@ int check_cycle(spreadsheet *sheet ,cell *c, int* target_cell_hash){
         0 : If there is no cycle
         1 : If there is a presence of cycle
     */
-    Stack *stk = createStack(16);
+    Stack *stk = createStack(2);
     int found = 0;
     for(int i = 0; i < c->children.size; i++){
         push(stk , c->children.data[i]);
@@ -471,7 +471,7 @@ void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col
         - row : pointer to the row index
         - col : pointer to the col index
     */
-    int current_cell_hash = hash_index(sheet , *row , *col);
+    int current_cell_hash =  ((*(row)) * sheet->cols) + (*(col));
     // printf("Deleting parent connections\n");
     for(size_t i = 0; i < c->parents.size; i++){
         // printf("I am in loop\n");
