@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -g	
 
 # Source files
-SRC = main.c src/spreadsheet.c src/utils.c src/command_handler.c src/spreadsheet_display.c
+SRC = src/main.c src/spreadsheet.c src/utils.c src/command_handler.c src/spreadsheet_display.c
 
 # Object files
 OBJ = $(SRC:.c=.o)

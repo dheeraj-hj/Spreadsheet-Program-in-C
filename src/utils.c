@@ -1,14 +1,38 @@
-#include "utils.h"
+#include "../include/utils.h"
+#include "../include/spreadsheet.h"
 #include "stdlib.h"
 #include "ctype.h"
 #include "string.h"
 #include "limits.h"
 #include "math.h"
-#include "spreadsheet.h"
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define INIT_SIZE 10
 
+void name_to_indices(const char *name, int *row, int *col){
+    /*
+        Takes cell as input and break it down to row and column index and stores it in
+        row and col
+        - name : string cell, eg A2,CX394 
+        - row : pointer to the row index
+        - col : pointer to the col index
+
+    */
+    *col=0;
+    *row=0;
+    int i= 0;
+    while (isalpha(name[i])) {
+        *col= *col * 26 +(name[i] -'A' +1)  ;
+        i++ ;
+    }
+    
+    while(isdigit(name[i])) {
+        *row=  *row*10 + (name[i]- '0');
+        i++ ;
+    }
+    *row-=1;
+    *col-=1;
+}
 void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *col2){
     /*
         This function will analyze range and stores upper and lower bound values of range
@@ -44,30 +68,6 @@ void range_to_indices(const char *range, int *row1, int *col1, int *row2, int *c
     return;
 }
 
-void name_to_indices(const char *name, int *row, int *col){
-    /*
-        Takes cell as input and break it down to row and column index and stores it in
-        row and col
-        - name : string cell, eg A2,CX394 
-        - row : pointer to the row index
-        - col : pointer to the col index
-
-    */
-    *col=0;
-    *row=0;
-    int i= 0;
-    while (isalpha(name[i])) {
-        *col= *col * 26 +(name[i] -'A' +1)  ;
-        i++ ;
-    }
-    
-    while(isdigit(name[i])) {
-        *row=  *row*10 + (name[i]- '0');
-        i++ ;
-    }
-    *row-=1;
-    *col-=1;
-}
 
 char* colIndex_to_name(int i){
     // function assumses that i lies between 0 and 18,277
@@ -80,7 +80,7 @@ char* colIndex_to_name(int i){
         if (i< 0) break;
     }
 
-    col_name[index] ='\0';
+    // col_name[index] ='\0';
     
     for (int j = 0, k = index - 1; j < k; j++, k--) {
             char temp = col_name[j];

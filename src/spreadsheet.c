@@ -1,12 +1,12 @@
-#include "spreadsheet.h"
-#include "utils.h"
+#include "../include/spreadsheet.h"
+#include "../include/utils.h"
 #include "stdlib.h"
 #include "stddef.h"
 #include "string.h"
 #include "math.h"
 #include "unistd.h"
 #include "time.h"
-#include "spreadsheet_display.h"
+#include "../include/spreadsheet_display.h"
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 

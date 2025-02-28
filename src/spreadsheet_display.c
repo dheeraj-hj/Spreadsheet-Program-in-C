@@ -1,5 +1,5 @@
-#include "spreadsheet.h"
-#include "utils.h"
+#include "../include/spreadsheet.h"
+#include "../include/utils.h"
 #include "stdlib.h"
 #include "stddef.h"
 #include "string.h"
