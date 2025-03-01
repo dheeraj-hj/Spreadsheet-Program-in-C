@@ -40,7 +40,10 @@ typedef struct Stack {
     int* array;
 }Stack;
 
+extern int tester;
 spreadsheet *create_spreadsheet(int rows, int cols); // Create a new spreadsheet
+void free_int_array(IntArray *arr);
+void free_cell(cell *c);
 void free_spreadsheet(spreadsheet *sheet); // Free the memory allocated for the spreadsheet
 void evaluate_cell(spreadsheet *sheet, int row, int col); // Evaluate the value of a cell
 Stack* createStack(int capacity);

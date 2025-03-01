@@ -14,6 +14,7 @@
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 int display = 2;
+int tester_mode = 0;
 
 void parse_command(spreadsheet* sheet, const char *command){
     /*
@@ -31,19 +32,21 @@ void parse_command(spreadsheet* sheet, const char *command){
     validate_command(sheet ,command , &error_code);
     clock_gettime(CLOCK_MONOTONIC, &end_time); 
 
-    double t = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_nsec - start_time.tv_nsec) / 1.0e9;    
-    if(error_code != 0){
-        if(display == 2){
-            display_spreadsheet(sheet);
+    double t = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_nsec - start_time.tv_nsec) / 1.0e9;   
+    if(!tester_mode){
+        if(error_code != 0){
+            if(display == 2){
+                display_spreadsheet(sheet);
+            }
+            error_message(error_code , t);
+            return;
+        }else{
+            if(display == 2){
+                display_spreadsheet(sheet);
+            }
+            display_status("ok" , t);
         }
-        error_message(error_code , t);
-        return;
-    }else{
-        if(display == 2){
-            display_spreadsheet(sheet);
-        }
-        display_status("ok" , t);
-    }
+    } 
     // if(display == 1){
     //     display = 2;
     // }

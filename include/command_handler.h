@@ -3,6 +3,8 @@
 
 #include "spreadsheet.h"
 
+extern int tester_mode;
+
 void parse_command(spreadsheet *sheet, const char *command); // Parse the command 
 void execute_command(); // Execute the command
 void validate_command(spreadsheet* sheet, const char *cmd , int *error_code); // Validate the command

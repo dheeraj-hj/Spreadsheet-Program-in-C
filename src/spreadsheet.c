@@ -7,8 +7,11 @@
 #include "unistd.h"
 #include "time.h"
 #include "../include/spreadsheet_display.h"
+
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
+
+int tester = 0;
 
 spreadsheet *create_spreadsheet(int rows, int cols){
     struct timespec start_time, end_time;
@@ -47,8 +50,10 @@ spreadsheet *create_spreadsheet(int rows, int cols){
     clock_gettime(CLOCK_MONOTONIC, &end_time);   // End time
     double elapsed_time = (end_time.tv_sec - start_time.tv_sec) +
                           (end_time.tv_nsec - start_time.tv_nsec) / 1.0e9;
-    display_spreadsheet(s);
-    display_status("OK", elapsed_time);
+    if(!tester){
+        display_spreadsheet(s);
+        display_status("OK", elapsed_time);
+    }
     return s;
 }
 
@@ -299,4 +304,47 @@ void push(Stack* stack, int item) {
 
 int pop(Stack* stack) {
     return stack->array[stack->top--];
+}
+
+void free_int_array(IntArray *arr) {
+    if (arr->data) {
+        free(arr->data);
+        arr->data = NULL;
+    }
+    arr->size = 0;
+    arr->capacity = 0;
+}
+
+void free_cell(cell *c) {
+    if (!c) return;
+
+    if (c->formula) {
+        free((void *)c->formula); 
+        c->formula = NULL;
+    }
+
+    free_int_array(&c->parents);
+    free_int_array(&c->children);
+}
+
+void free_spreadsheet(spreadsheet *sheet) {
+    if (!sheet) return;
+    for (int i = 0; i < sheet->rows; i++) {
+        if (sheet->table[i]) {
+            for (int j = 0; j < sheet->cols; j++) {
+                free_cell(&sheet->table[i][j]); 
+            }
+            free(sheet->table[i]);
+        }
+    }
+
+    free(sheet->table);
+    sheet->table = NULL;
+
+    if (sheet->bounds) {
+        free(sheet->bounds);
+        sheet->bounds = NULL;
+    }
+
+    free(sheet);
 }
