@@ -79,7 +79,7 @@ char* colIndex_to_name(int i){
         i = (i/26)-1;
         if (i< 0) break;
     }
-    
+    col_name[index] ='\0';
     for (int j = 0, k = index - 1; j < k; j++, k--) {
             char temp = col_name[j];
             col_name[j] = col_name[k];
