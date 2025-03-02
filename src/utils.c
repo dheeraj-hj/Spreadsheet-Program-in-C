@@ -79,8 +79,6 @@ char* colIndex_to_name(int i){
         i = (i/26)-1;
         if (i< 0) break;
     }
-
-    // col_name[index] ='\0';
     
     for (int j = 0, k = index - 1; j < k; j++, k--) {
             char temp = col_name[j];
@@ -381,8 +379,7 @@ void add_child(cell *c, int child_hash) {
     }
     c->children.data[left] = child_hash;
     c->children.size++;
-    // printf("Added child\n");
-    // printf("Size of children %d\n", c->children.size);
+    
 }
 
 void add_parent(cell *c, int parent_hash) {
@@ -408,8 +405,7 @@ void add_parent(cell *c, int parent_hash) {
     }
     c->parents.data[left] = parent_hash;
     c->parents.size++;
-    // printf("Added parent\n");
-    // printf("Size of parents %d\n", c->parents.size);
+    
 }
 
 int hash_index(spreadsheet *sheet , int row, int col) {
@@ -472,9 +468,7 @@ void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col
         - col : pointer to the col index
     */
     int current_cell_hash =  ((*(row)) * sheet->cols) + (*(col));
-    // printf("Deleting parent connections\n");
     for(size_t i = 0; i < c->parents.size; i++){
-        // printf("I am in loop\n");
 
         int parent_hash = c->parents.data[i];
         int prow = parent_hash / sheet->cols;
@@ -512,23 +506,13 @@ void delete_parent_connections(spreadsheet *sheet, cell *c , int *row , int *col
     free(c->parents.data);
     c->parents.data = NULL;
     c->parents.size = c->parents.capacity = 0;
-    // printf("Deleted parent connections\n");
 }
 
 void dfs(spreadsheet *sheet , int row , int col , Stack *stk){
     /*
         This performs dfs if visit value of cell is 0
     */
-    // sheet->table[row][col].vis = 1;
-    // for(int i = 0; i < sheet->table[row][col].children.size; i++){
-    //     int c_col = sheet->table[row][col].children.data[i] % sheet->cols;
-    //     int c_row = sheet->table[row][col].children.data[i] / sheet->cols;
-    //     // printf("Child row in dfs %d col %d and vis is %d\n", c_row , c_col , sheet->table[c_row][c_col].vis);
-    //     if(!sheet->table[c_row][c_col].vis){
-    //         dfs(sheet , c_row , c_col , stk);
-    //     }
-    // }
-    // push(stk , hash_index(sheet , row , col));
+    
     Stack *traversal_stack = createStack(16);
     int current_hash = row * sheet->cols + col;
     push(traversal_stack, (current_hash << 1) | 0);  // Encode unprocessed state
@@ -575,11 +559,9 @@ void recalculate_dependent_cells(spreadsheet *sheet , int *row ,int *col){
     sheet->table[*row][*col].vis = 0;
     while(!isEmpty(stk)){
         int cell_hash = pop(stk);
-        // printf("Cell hash %d\n", cell_hash);
         int _col = cell_hash % sheet->cols;
         int _row = cell_hash / sheet->cols;
 
         evaluate_cell(sheet , _row , _col);
     } 
-    // dfs2(sheet , *row , *col);
 }

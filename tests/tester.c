@@ -160,6 +160,9 @@ void run_tests(){
     check_invalid_input(sheet , "A1++" , "A1++" , "Invalid command");
     check_invalid_input(sheet , "A1=3+3+" , "A1=3+3+" , "Invalid command");
     check_invalid_input(sheet, "random invalid input", "random invalid input", "Invalid command");
+    check_invalid_input(sheet , "A0034=4" , "A0034=4" , "Invalid cell name");
+    check_invalid_input(sheet , "A3=MAX(F3:A1)" , "A3=MAX(F3:A1)" , "Invalid range");
+
 }
 int main(){
     run_tests();

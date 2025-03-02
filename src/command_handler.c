@@ -118,8 +118,6 @@ void validate_command(spreadsheet* sheet, const char *cmd , int *error_code){
     const char *targetcell = command;
     const char *expression = equal + 1;
     *equal = '\0';
-    // trim_space(targetcell);
-    // trim_space(expression);
     int targetcell_rowid;
     int targetcell_colid;
     if(!valid_cell(sheet , targetcell , &targetcell_rowid , &targetcell_colid)){ 
@@ -386,8 +384,6 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
     int row1, col1, row2, col2;
     name_to_indices(first_cell, &row1, &col1);
     name_to_indices(last_cell, &row2, &col2);
-    // struct timespec start_time, end_time;
-    // clock_gettime(CLOCK_MONOTONIC, &start_time); // Start time
     for (int i = row1; i <= row2; i++) {
         for (int j = col1; j <= col2; j++) {
             if (i == *row && j == *col) {
@@ -404,21 +400,9 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
             }
         }
     }
-    // clock_gettime(CLOCK_MONOTONIC, &end_time);   // End time
-    // double elapsed_time = (end_time.tv_sec - start_time.tv_sec) +
-    //                       (end_time.tv_nsec - start_time.tv_nsec) / 1.0e9;
-    // printf("Time spent in first loop: %.1f seconds\n", elapsed_time);
 
-    // struct timespec start_time1, end_time1;
-    // clock_gettime(CLOCK_MONOTONIC, &start_time1); // Start time
     delete_parent_connections(sheet, &sheet->table[*row][*col] , row , col);
-    // clock_gettime(CLOCK_MONOTONIC, &end_time1);   // End time
-    // double elapsed_time1 = (end_time1.tv_sec - start_time1.tv_sec) +
-    //                       (end_time1.tv_nsec - start_time1.tv_nsec) / 1.0e9;
-    // printf("Time spent in delete parent connections: %.1f seconds\n", elapsed_time1);
 
-    // struct timespec start_time2, end_time2;
-    // clock_gettime(CLOCK_MONOTONIC, &start_time2); // Start time
     int min_val = INT_MAX;
     sheet->table[*row][*col].error = '0';
     for (int i = row1; i <= row2; i++) {
@@ -431,21 +415,13 @@ void min_handling(spreadsheet* sheet , int *row , int *col ,const char *_expr , 
             add_parent(&sheet->table[*row][*col],  ((i) * sheet->cols) + (j));
         }
     }
-    // clock_gettime(CLOCK_MONOTONIC, &end_time2);   // End time
-    // double elapsed_time2 = (end_time2.tv_sec - start_time2.tv_sec) +
-    //                       (end_time2.tv_nsec - start_time2.tv_nsec) / 1.0e9;
-    // printf("Time spent in second loop: %.1f seconds\n", elapsed_time2);
+   
     sheet->table[*row][*col].val = min_val;
     sheet->table[*row][*col].formula = expr_to_store;
-    // struct timespec start_time3, end_time3;
-    // clock_gettime(CLOCK_MONOTONIC, &start_time3); // Start time
+    
 
     recalculate_dependent_cells(sheet , row , col);
 
-    // clock_gettime(CLOCK_MONOTONIC, &end_time3);   // End time
-    // double elapsed_time3 = (end_time3.tv_sec - start_time3.tv_sec) +
-    //                       (end_time3.tv_nsec - start_time3.tv_nsec) / 1.0e9;
-    // printf("Time spent in recalculate dependent cells: %.1f seconds\n", elapsed_time3);
     free(exprdup);
 }
 

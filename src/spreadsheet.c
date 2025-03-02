@@ -34,9 +34,7 @@ spreadsheet *create_spreadsheet(int rows, int cols){
             s->table[i][j].parents.size = 0;
             s->table[i][j].parents.capacity = 0;
             s->table[i][j].error = '0';
-    //         arr->data = malloc(initial * sizeof(int));
-    // arr->size = 0;
-    // arr->capacity = initial;
+
         }
     }
     s->bounds->first_row = (int *)malloc(sizeof(int));
@@ -65,7 +63,6 @@ void evaluate_cell(spreadsheet *sheet , int row , int col){
         - row : integer row index
         - col : integer col index
     */
-//    printf("Evaluating cell %d , %d\n" , row , col );
     sheet->table[row][col].vis = 0;
 
    int r1 , c1;

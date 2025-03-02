@@ -37,7 +37,7 @@ test: $(TARGET)
 
 # Generate report
 report:
-	pdflatex report.tex   # Assumes you have a LaTeX report source file
+	pdflatex ./docs/report.tex   # Assumes you have a LaTeX report source file
 
 # Clean build files
 clean:
